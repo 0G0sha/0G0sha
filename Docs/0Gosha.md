@@ -12,7 +12,11 @@
 
 A backend API tool that takes raw user text and optimizes it into a professional prompt for Claude/GPT. No AI API calls — the engine uses a pure rule-based system that learns from user feedback over time via MongoDB-stored weights.
 
+![Sequence Diagrams](https://lh3.googleusercontent.com/d/1cDivfLLNX60t8CRehitQ3h2l_mFaYA3M)
+
 ### Core Value
+
+![Flow Diagrams](https://lh3.googleusercontent.com/d/1amoHFhbnDXEAuV9zJiROl9sb7zr0MS1m)
 
 | What | How |
 |---|---|
