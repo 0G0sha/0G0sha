@@ -17,15 +17,3 @@ export interface IUser extends Document {
      tokens: Tokens;
      subscription: Types.ObjectId;
 }
-
-export interface IUserRequest extends Request {
-     _id?: Types.ObjectId | string;
-     fullname?: string;
-     username?: string;
-     email?: string;
-     avatar?: string;
-     apiKey?: string;
-     plan?: "free" | "starter" | "pro" | "enterprise";
-     tokens?: Tokens;
-     subscription?: Types.ObjectId;
-}

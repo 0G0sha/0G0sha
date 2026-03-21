@@ -16,6 +16,6 @@ jobs:
                -d "{
                     \"avatar_url\": \" https://github.com/${{ github.actor }}.png \",
                     \"username\": \" ${{ github.actor }} \",
-                    \"content\": \" Admin: @elrefai99 \nServer: 0Gosha Server \nNew push in branch: **${{ github.ref_name }}** \nCommit: **${{ github.event.head_commit.message }}**\"
+                    \"content\": \" Admin: @elrefai99 \nServer: **0Gosha Server*** \nNew push in branch: **${{ github.ref_name }}** \nCommit: **${{ github.event.head_commit.message }}**\"
                   }" \
                ${{ secrets.DISCORD_WEBHOOK_0GOSHA }}
