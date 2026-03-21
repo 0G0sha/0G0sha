@@ -3,6 +3,12 @@
   "compilerOptions": {
     "rootDir": "./",
     "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
     "typeRoots": [
       "./src/types",
       "./node_modules/@types"
@@ -10,7 +16,6 @@
     "types": [
       "node",
       "express",
-      "multer"
     ]
   },
 }

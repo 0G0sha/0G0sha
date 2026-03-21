@@ -1,6 +1,6 @@
 {
   "name": "0gosha",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
@@ -38,7 +38,10 @@
     "sharp": "catalog:runtime",
     "swagger-jsdoc": "catalog:runtime",
     "swagger-ui-express": "catalog:runtime",
-    "uuid": "catalog:runtime"
+    "uuid": "catalog:runtime",
+    "cloudinary": "catalog:runtime",
+    "multer": "catalog:runtime",
+    "streamifier": "catalog:runtime"
   },
   "devDependencies": {
     "@mohamed-elrefai/tsconfigs": "catalog:types",
@@ -61,6 +64,8 @@
     "@types/swagger-jsdoc": "catalog:types",
     "@types/swagger-ui-express": "catalog:types",
     "@types/uuid": "catalog:types",
+    "@types/multer": "catalog:types",
+    "@types/streamifier": "catalog:types",
     "bull-arena": "catalog:tools",
     "bullmq": "catalog:tools",
     "class-transformer": "catalog:tools",
