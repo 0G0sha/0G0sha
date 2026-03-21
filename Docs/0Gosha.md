@@ -1,4 +1,4 @@
-# Gosha — Complete Project Plan
+# 0Gosha — Complete Project Plan
 
 ## Pure AI Agent Engine + Token System + Subscription Plans
 
