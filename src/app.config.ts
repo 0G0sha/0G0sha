@@ -3,10 +3,10 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import helmet from "helmet";
-import { limiter } from "./utils/limit-request";
+import { limiter } from "@/utils/limit-request";
 import client from "prom-client";
 import * as useragent from "express-useragent";
-import { logger } from "./utils/logger";
+import { logger } from "@/utils/logger";
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });

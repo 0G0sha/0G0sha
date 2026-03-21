@@ -25,9 +25,9 @@ process
           }, 500);
      });
 import express, { Express, Request, Response } from 'express'
-import { mongoDBConfig, redisConfig } from './config';
+import { mongoDBConfig, redisConfig } from '@/config';
 import client from "prom-client";
-import appConfig from './app.config';
+import appConfig from '@/app.config';
 
 const app: Express = express()
 
