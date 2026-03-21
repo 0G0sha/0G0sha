@@ -22,6 +22,9 @@ catalogs:
     pino: "^9.7.0"
     pino-pretty: "^13.0.0"
     uuid: "^13.0.0"
+    cloudinary: "^2.6.1"
+    multer: "^2.0.0"
+    streamifier: "^0.1.1"
 
   types:
     "@mohamed-elrefai/tsconfigs": "^1.0.2"
@@ -44,6 +47,8 @@ catalogs:
     "@types/express-useragent": "^1.0.5"
     "@types/request-ip": "^0.0.41"
     "@types/uuid": "^11.0.0"
+    "@types/multer": "^2.0.0"
+    "@types/streamifier": "^0.1.2"
 
   tools:
     bull-arena: "^4.9.2"

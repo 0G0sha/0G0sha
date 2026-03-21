@@ -1,3 +1,4 @@
+import { IUserRequest } from "@/Schema/User/@types";
 import "express";
 
 declare global {
