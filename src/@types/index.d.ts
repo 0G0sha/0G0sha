@@ -1,5 +1,5 @@
-import { Request } from "express";
-import { ProjectionType, QueryOptions, Types } from "mongoose";
+import type { Request } from 'express'
+import type { ProjectionType, QueryOptions, Types } from 'mongoose'
 
 export interface PaginationParams {
      page?: number;
@@ -34,7 +34,7 @@ export interface IUserRequest extends Request {
      email?: string;
      avatar?: string;
      apiKey?: string;
-     plan?: "free" | "starter" | "pro" | "enterprise";
+     plan?: 'free' | 'starter' | 'pro' | 'enterprise';
      tokens?: any;
      subscription?: Types.ObjectId;
 }

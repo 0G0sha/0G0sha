@@ -1,9 +1,9 @@
-import { UploadApiResponse } from "cloudinary";
-import multer from "multer";
-import streamifier from "streamifier";
-import cloudinary from "@/config/cloudinary";
+import type { UploadApiResponse } from 'cloudinary'
+import multer from 'multer'
+import streamifier from 'streamifier'
+import cloudinary from '@/config/cloudinary'
 
-export const upload = multer({ storage: multer.memoryStorage() });
+export const upload = multer({ storage: multer.memoryStorage() })
 
 export interface UploadOptions {
      folder?: string;
@@ -11,20 +11,20 @@ export interface UploadOptions {
 }
 
 export function uploadToCloudinary(
-     buffer: Buffer,
-     options: UploadOptions = {}
+  buffer: Buffer,
+  options: UploadOptions = {},
 ): Promise<UploadApiResponse> {
-     return new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-               {
-                    folder: options.folder ?? "uploads",
-                    ...options.transformation,
-               },
-               (error, result) => {
-                    if (error || !result) return reject(error);
-                    resolve(result);
-               }
-          );
-          streamifier.createReadStream(buffer).pipe(stream);
-     });
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: options.folder ?? 'uploads',
+        ...options.transformation,
+      },
+      (error, result) => {
+        if (error || !result) return reject(error)
+        resolve(result)
+      },
+    )
+    streamifier.createReadStream(buffer).pipe(stream)
+  })
 }

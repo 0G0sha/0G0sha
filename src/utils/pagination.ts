@@ -1,17 +1,17 @@
-import { Model, Document } from "mongoose";
-import { PaginationParams, PaginateOptions, PaginatedResult } from "@/@types";
+import type { Document, Model } from 'mongoose'
+import type { PaginatedResult, PaginateOptions, PaginationParams } from '@/@types'
 
 /**
  * Clamps page/limit to safe values and returns skip offset.
  */
 export const normalizePagination = (
-  params: PaginationParams = {}
+  params: PaginationParams = {},
 ): { page: number; limit: number; skip: number } => {
-  const page = Math.max(1, Math.floor(Number(params.page) || 1));
-  const limit = Math.min(100, Math.max(1, Math.floor(Number(params.limit) || 10)));
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-};
+  const page = Math.max(1, Math.floor(Number(params.page) || 1))
+  const limit = Math.min(100, Math.max(1, Math.floor(Number(params.limit) || 10)))
+  const skip = (page - 1) * limit
+  return { page, limit, skip }
+}
 
 /**
  * Generic paginate function for any Mongoose model.
@@ -26,18 +26,18 @@ export const normalizePagination = (
  */
 export const paginate = async <T extends Document>(
   model: Model<T>,
-  { filter = {}, projection, options = {}, params }: PaginateOptions<T> = {}
+  { filter = {}, projection, options = {}, params }: PaginateOptions<T> = {},
 ): Promise<PaginatedResult<T>> => {
-  const { page, limit, skip } = normalizePagination(params);
+  const { page, limit, skip } = normalizePagination(params)
 
   const [data, total] = await Promise.all([
     model
       .find(filter, projection, { ...options, skip, limit })
       .lean<T[]>({ virtuals: false }),
     model.countDocuments(filter),
-  ]);
+  ])
 
-  const totalPages = Math.ceil(total / limit);
+  const totalPages = Math.ceil(total / limit)
 
   return {
     data,
@@ -49,5 +49,5 @@ export const paginate = async <T extends Document>(
       hasNext: page < totalPages,
       hasPrev: page > 1,
     },
-  };
-};
+  }
+}

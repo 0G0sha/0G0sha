@@ -1,31 +1,31 @@
-import { createClient } from 'redis';
+import { createClient } from 'redis'
 
 const client: any = createClient({
-     url: process.env.NODE_ENV == "development" ? process.env.REDIS_HOST_LOCALHOST : process.env.REDIS_HOST,
-     socket: {
-          connectTimeout: 30000,
-          reconnectStrategy: (retries) => Math.min(retries * 100, 3000),
-     },
-});
+  url: process.env.NODE_ENV == 'development' ? process.env.REDIS_HOST_LOCALHOST : process.env.REDIS_HOST,
+  socket: {
+    connectTimeout: 30000,
+    reconnectStrategy: (retries) => Math.min(retries * 100, 3000),
+  },
+})
 
 export const redisConfig = async (): Promise<void> => {
-     try {
-          await client.connect();
-          console.log(`🛢️  Redis connected successfully: ${process.env.NODE_ENV === "development" ? process.env.REDIS_HOST_LOCALHOST : process.env.REDIS_HOST}`);
-     } catch (err) {
-          console.error("Redis connection error:", err);
-          process.exit(1);
-     }
-};
-
-client.on("error", (err: any) => console.log("Redis Client Error", err));
-
-if (process.env.NODE_ENV !== 'development') {
-     process.on('SIGTERM', async () => {
-          await client.disconnect();
-          console.log('Redis connection closed');
-          process.exit(0);
-     });
+  try {
+    await client.connect()
+    console.log(`🛢️  Redis connected successfully: ${process.env.NODE_ENV === 'development' ? process.env.REDIS_HOST_LOCALHOST : process.env.REDIS_HOST}`)
+  } catch (err) {
+    console.error('Redis connection error:', err)
+    process.exit(1)
+  }
 }
 
-export default client;
+client.on('error', (err: any) => console.log('Redis Client Error', err))
+
+if (process.env.NODE_ENV !== 'development') {
+  process.on('SIGTERM', async () => {
+    await client.disconnect()
+    console.log('Redis connection closed')
+    process.exit(0)
+  })
+}
+
+export default client
