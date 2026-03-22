@@ -1,25 +1,25 @@
-import { Queue } from "bullmq";
-import { createLogger } from "../../utils/logger";
-import { bullmqConnection } from "../connection";
-import type { EmailJobData } from "./job";
+import { Queue } from 'bullmq'
+import { createLogger } from '../../utils/logger'
+import { bullmqConnection } from '../connection'
+import type { EmailJobData } from './job'
 
-const log = createLogger("EmailQueue");
+const log = createLogger('EmailQueue')
 
-export const emailQueue = new Queue<EmailJobData>("email", {
+export const emailQueue = new Queue<EmailJobData>('email', {
   connection: bullmqConnection,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
-      type: "exponential",
+      type: 'exponential',
       delay: 5000,
     },
     removeOnComplete: { count: 100 },
     removeOnFail: { count: 500 },
   },
-});
+})
 
-emailQueue.on("error", (err) => {
-  log.error({ err }, "EmailQueue error");
-});
+emailQueue.on('error', (err) => {
+  log.error({ err }, 'EmailQueue error')
+})
 
-log.info("EmailQueue initialized");
+log.info('EmailQueue initialized')

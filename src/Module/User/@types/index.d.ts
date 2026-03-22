@@ -1,4 +1,4 @@
-import { Document, Types } from "mongoose";
+import type { Document, Types } from 'mongoose'
 
 interface Tokens {
      used: number;
@@ -13,7 +13,7 @@ export interface IUser extends Document {
      password: string
      avatar: string;
      apiKey: string;
-     plan: "free" | "starter" | "pro" | "enterprise";
+     plan: 'free' | 'starter' | 'pro' | 'enterprise';
      tokens: Tokens;
      subscription: Types.ObjectId;
 }

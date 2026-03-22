@@ -1,36 +1,36 @@
-import swaggerJsdoc from "swagger-jsdoc";
-import swaggerUi from "swagger-ui-express";
-import { Express } from "express";
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import swaggerJsdoc from 'swagger-jsdoc'
+import swaggerUi from 'swagger-ui-express'
+import type { Express } from 'express'
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
 
-const packageJson = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'));
-const appVersion = packageJson.version;
+const packageJson = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'))
+const appVersion = packageJson.version
 
 const options: swaggerJsdoc.Options = {
-     definition: {
-          openapi: "3.0.0",
-          info: {
-               title: "APIs Docs",
-               version: appVersion,
-               description: "API documentation for 0Gosha, <a href='https://api.0Gosha.com/documentation'>Project documentation</a>",
-          },
-          servers: [
-               {
-                    url: "http://localhost:3000",
-                    description: "Live URL",
-               },
-          ],
-     },
-     apis: [
-          './src/module/**/*.swagger.ts',
-     ],
-};
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'APIs Docs',
+      version: appVersion,
+      description: "API documentation for 0Gosha, <a href='https://api.0Gosha.com/documentation'>Project documentation</a>",
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000',
+        description: 'Live URL',
+      },
+    ],
+  },
+  apis: [
+    './src/module/**/*.swagger.ts',
+  ],
+}
 
-const swaggerSpec = swaggerJsdoc(options);
+const swaggerSpec = swaggerJsdoc(options)
 
 const swaggerUiOptions = {
-     customCss: `
+  customCss: `
     :root {
       --primary-color: #3b82f6;
       --secondary-color: #60a5fa;
@@ -263,11 +263,11 @@ const swaggerUiOptions = {
       background: var(--hover-bg);
     }
   `,
-     customSiteTitle: "0Gosha API Docs",
-     customfavIcon: "/v0/public/favicon.ico",
-};
+  customSiteTitle: '0Gosha API Docs',
+  customfavIcon: '/v0/public/favicon.ico',
+}
 
 export function setupSwagger(app: Express): void {
-     app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
-     console.log("📄 Swagger docs endpoints available at:", process.env.NODE_ENV === "development" ? `${String(process.env.SITE_API_Local_URL)}/api-docs` : `${String(process.env.SITE_API_URL)}/api-docs`);
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions))
+  console.log('📄 Swagger docs endpoints available at:', process.env.NODE_ENV === 'development' ? `${String(process.env.SITE_API_Local_URL)}/api-docs` : `${String(process.env.SITE_API_URL)}/api-docs`)
 }

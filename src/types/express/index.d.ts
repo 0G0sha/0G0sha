@@ -1,5 +1,5 @@
-import { IUserRequest } from "@/@types";
-import "express";
+import type { IUserRequest } from '@/@types'
+import 'express'
 
 declare global {
      namespace Express {
@@ -12,4 +12,4 @@ declare global {
      }
 }
 
-export { };
+export { }
