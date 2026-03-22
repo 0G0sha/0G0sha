@@ -16,7 +16,8 @@
     "taze:back": "npx taze major",
     "taze:update": "npx taze major -w",
     "taze:patch": "npx taze patch",
-    "compress:ubuntu": "sudo zip -r project.zip ."
+    "compress:ubuntu": "sudo zip -r project.zip .",
+    "gen:imports": "ts-node scripts/gen-the-import.ts"
   },
   "keywords": [],
   "author": "Mohammed Elrefai <elrefai99@gmail.com>",
