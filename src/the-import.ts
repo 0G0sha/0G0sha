@@ -18,7 +18,6 @@ export type { UploadOptions } from './Providers/cloudinary.provider';
 export { uploadToCloudinary, upload } from './Providers/cloudinary.provider';
 export { AppError } from './Shared/errors/app-error';
 export { errorHandler } from './Shared/errors/errorHandler';
-export { allowedOrigins } from './app.config';
 export { default as cloudinary } from './config/cloudinary';
 export { mongoDBConfig } from './config/mongoDB';
 export { redisConfig } from './config/redis';
