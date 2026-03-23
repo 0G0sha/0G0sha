@@ -16,7 +16,7 @@ export const mongoDBConfig = async (retries = 5): Promise<void> => {
   const uri = process.env.MONGO_URI as string
   try {
     await connect(uri, { serverSelectionTimeoutMS: 5000 })
-    console.log('✅ Success connected to EGYStay Database')
+    console.log('✅ Success connected to 0Gosha Database')
     console.log('ɪᴘ My IP Address:', getLocalIP())
   } catch (err) {
     if (retries > 0) {

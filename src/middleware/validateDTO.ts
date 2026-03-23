@@ -1,8 +1,8 @@
 import { plainToInstance } from 'class-transformer'
 import { validate } from 'class-validator'
 import type { NextFunction, Request, RequestHandler, Response } from 'express'
-import { AppError } from '@/Shared/errors/app-error'
-import { asyncHandler } from '@/utils/api-requesthandler'
+import { AppError } from '../Shared/errors/app-error'
+import { asyncHandler } from '../utils/api-requesthandler'
 
 export function validateDTO<T extends object>(DTOClass: new () => T): RequestHandler {
      return asyncHandler(

@@ -1,4 +1,4 @@
-import { RegisterDTO, UserModel, token_PASETO } from "@/the-import";
+import { RegisterDTO, UserModel, token_PASETO } from "../../../the-import";
 
 export class BasedAuthService {
      constructor() { }
@@ -15,6 +15,7 @@ export class BasedAuthService {
           const user = await UserModel.create({
                fullname: name,
                email: email.toLowerCase(),
+
                password: password,
           })
 
@@ -23,6 +24,7 @@ export class BasedAuthService {
 
           return { success: true, access_token, refresh_token }
      }
+
 
      public async create_token(payload: { _id: string; type: 'access' | 'refresh' | 'forget_password'; access_device?: string }): Promise<string> {
           const tokenPayload = {

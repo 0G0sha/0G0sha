@@ -1,4 +1,4 @@
-import type { IUserRequest } from '@/@types'
+import type { IUserRequest } from '../../@types'
 import 'express'
 
 declare global {

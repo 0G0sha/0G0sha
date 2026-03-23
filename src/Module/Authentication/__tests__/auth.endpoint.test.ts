@@ -4,18 +4,18 @@ import type { Express } from 'express'
 import { createTestApp } from '../../../__tests__/helpers/test-app'
 
 // ─── Infrastructure mocks (prevent real Redis / BullMQ connections) ───────────
-vi.mock('@/config/redis', () => ({
+vi.mock('../../../config/redis', () => ({
   default: { on: vi.fn(), connect: vi.fn(), disconnect: vi.fn() },
   redisConfig: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('@/MessageQueue/Queue/queue.email', () => ({
+vi.mock('../../../MessageQueue/Queue/queue.email', () => ({
   queue: { add: vi.fn(), on: vi.fn(), close: vi.fn() },
   addJobToQueue: vi.fn().mockResolvedValue(undefined),
 }))
 
 // ─── Rate limiter bypass (prevents test exhausting the auth window) ────────────
-vi.mock('@/utils/limit-request', () => ({
+vi.mock('../../../utils/limit-request', () => ({
   authlimiter: (_req: any, _res: any, next: any) => next(),
   limiter: (_req: any, _res: any, next: any) => next(),
 }))
@@ -26,7 +26,7 @@ const { mockCheckAccount, mockCreateAccount } = vi.hoisted(() => ({
   mockCreateAccount: vi.fn(),
 }))
 
-vi.mock('@/Module/Authentication/Service/based-auth.service', () => ({
+vi.mock('../Service/based-auth.service', () => ({
   BasedAuthService: vi.fn().mockImplementation(() => ({
     check_account: mockCheckAccount,
     create_account: mockCreateAccount,

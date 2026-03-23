@@ -3,10 +3,10 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import morgan from 'morgan'
 import helmet from 'helmet'
-import { limiter } from '@/utils/limit-request'
+import { limiter } from './utils/limit-request'
 import client from 'prom-client'
 import * as useragent from 'express-useragent'
-import { logger } from '@/utils/logger'
+import { logger } from './utils/logger'
 
 const register = new client.Registry()
 client.collectDefaultMetrics({ register })
@@ -87,19 +87,17 @@ export default (app: Application) => {
   app.use('/v0/public', express.static('cdn'))
   app.use(cors(corsOptions))
   app.use(cookieParser())
-  if (process.env.NODE_ENV !== 'test') {
-    app.use(
-      morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined', {
-        stream: {
-          write: (message) => {
-            process.env.NODE_ENV === 'development'
-              ? process.stdout.write(message)
-              : process.stdout.write(message) && logger.info(message.trim())
-          },
+  app.use(
+    morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined', {
+      stream: {
+        write: (message) => {
+          process.env.NODE_ENV === 'development'
+            ? process.stdout.write(message)
+            : process.stdout.write(message) && logger.info(message.trim())
         },
-      }),
-    )
-  }
+      },
+    }),
+  )
   app.use(useragent.express())
   app.set('trust proxy', true)
 
