@@ -5,7 +5,7 @@ import { join, relative, resolve } from 'node:path'
 
 const ROOT = resolve(__dirname, '..')
 const SRC = join(ROOT, 'src')
-const OUT = join(SRC, 'the-import.d.ts')
+const OUT = join(SRC, 'the-import.ts')
 
 const PURE_REEXPORTS = new Set([
   'src/config/index.ts',
@@ -22,6 +22,10 @@ const SKIP_PATTERNS = [
   '.spec.',
   'the-import',
   'src/types/', // global Express augmentation — not re-exportable
+  'src/app.ts',      // entry point — not re-exportable
+  'src/app.config.ts', // entry-point config — would create circular deps
+  'src/app.module.ts', // entry-point router — would create circular deps
+  'src/config/dotenv', // side-effect only
 ]
 
 function walk(dir: string): string[] {
@@ -99,8 +103,7 @@ function buildOutput(infos: FileInfo[]): string {
 
   const lines: string[] = [
     '/**',
-    ' * the-import.d.ts — AUTO-GENERATED, do not edit manually.',
-    ` * Generated : ${new Date().toISOString()}`,
+    ' * the-import.ts — AUTO-GENERATED, do not edit manually.',
     ' * Regenerate: pnpm gen:imports',
     ' */',
     '',
