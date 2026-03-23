@@ -73,7 +73,7 @@ src/
 ├── app.config.ts             # Middleware pipeline
 ├── app.module.ts             # Route mounting
 ├── swagger.ts                # OpenAPI/Swagger setup
-├── the-import.ts             # AUTO-GENERATED barrel (run: pnpm gen:imports)
+├── gen-import.ts             # AUTO-GENERATED barrel (run: pnpm gen:imports)
 │
 ├── config/
 │   ├── dotenv.ts             # .env / .env.dev loader
@@ -199,7 +199,7 @@ app.use('/api/v1/feature', feature_module);
 
 ```typescript
 // Correct
-import { UserModel, AppError, asyncHandler } from '@/the-import';
+import { UserModel, AppError, asyncHandler } from '@/gen-import';
 
 // Wrong — never do this
 import { UserModel } from '../User/Schema/user.schema';
@@ -207,7 +207,7 @@ import { UserModel } from '../User/Schema/user.schema';
 
 After adding new exports anywhere in `src/`, run:
 ```bash
-pnpm gen:imports   # regenerates src/the-import.ts
+pnpm gen:imports   # regenerates src/gen-import.ts
 ```
 
 ---

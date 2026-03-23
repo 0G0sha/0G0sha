@@ -18,7 +18,7 @@ You are a meticulous code reviewer for the **Gosha** backend project. Your job i
 - New router is registered in `app.module.ts` via `app.use('/api/v1/...', router)`.
 
 ### 2. Import Convention
-- All cross-module imports go through `@/the-import` — flag any direct cross-module import.
+- All cross-module imports go through `@/gen-import` — flag any direct cross-module import.
 - Within the same module, direct relative imports are fine.
 - `reflect-metadata` must remain the first import in `app.ts`.
 

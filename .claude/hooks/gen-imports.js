@@ -2,7 +2,7 @@
 /**
  * PostToolUse hook — Write & Edit
  * Runs `pnpm gen:imports` whenever a TypeScript source file is written or edited,
- * keeping src/the-import.ts in sync with the latest exports automatically.
+ * keeping src/gen-import.ts in sync with the latest exports automatically.
  */
 
 let input = '';
@@ -15,7 +15,7 @@ process.stdin.on('end', () => {
     const file = raw.replace(/\\/g, '/');
 
     const isSrcTs = file.includes('/src/') && file.endsWith('.ts');
-    const isBarrel = file.includes('the-import');
+    const isBarrel = file.includes('gen-import');
 
     if (isSrcTs && !isBarrel) {
       const { execSync } = require('child_process');

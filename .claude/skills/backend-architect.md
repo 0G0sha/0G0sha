@@ -29,7 +29,7 @@ src/
   app.ts              # Entry — connects DB/Redis, starts server
   app.config.ts       # Middleware pipeline (Helmet, CORS, rate limit, Prometheus, Morgan, useragent)
   app.module.ts       # Mounts all route modules
-  the-import.d.ts     # AUTO-GENERATED barrel — never import across modules directly
+  gen-import.d.ts     # AUTO-GENERATED barrel — never import across modules directly
 
   config/             # dotenv, mongoDB, redis, cloudinary, index re-exports
   middleware/
@@ -80,7 +80,7 @@ Module/
 
 ```typescript
 import { RequestHandler } from "express";
-import { asyncHandler } from "@/the-import";
+import { asyncHandler } from "@/gen-import";
 
 export const actionController: RequestHandler = asyncHandler(async (req, res) => {
   // logic here
@@ -91,7 +91,7 @@ export const actionController: RequestHandler = asyncHandler(async (req, res) =>
 ### Service template
 
 ```typescript
-import { createLogger } from "@/the-import";
+import { createLogger } from "@/gen-import";
 
 const logger = createLogger("FeatureService");
 
@@ -155,7 +155,7 @@ Tokens are set as **httpOnly cookies** in the register controller.
 
 ## Key Conventions
 
-1. **Always import from `@/the-import`** — never import directly across modules. Run `pnpm gen:imports` after adding any new export.
+1. **Always import from `@/gen-import`** — never import directly across modules. Run `pnpm gen:imports` after adding any new export.
 2. **Logger**: `createLogger("ServiceName")` in every service and module file.
 3. **Rate limiting**: `authlimiter` on auth routes; `limiter` is global via `app.config.ts`.
 4. **Pagination**: use `paginate<T>(model, filter, options)` — never write raw `.skip()/.limit()` queries.
@@ -202,5 +202,5 @@ When reviewing or designing:
 - **Thin controllers**: all business logic lives in services, controllers only parse req → call service → send res.
 - **DTO-first**: define and validate input shape before writing any business logic.
 - **Fail fast**: validate at the boundary (DTO middleware), not deep in services.
-- **No direct cross-module imports**: enforce via `@/the-import` barrel.
+- **No direct cross-module imports**: enforce via `@/gen-import` barrel.
 - **Immutable tokens**: never mutate token payload — issue new tokens instead.

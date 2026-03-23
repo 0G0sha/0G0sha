@@ -13,7 +13,7 @@ Identify and fix all issues in the files provided (or current git diff if no fil
    **Code issues to fix:**
    - Missing `asyncHandler` wrapper on async controllers
    - Raw `new Error()` instead of `AppError` static factories
-   - Direct cross-module imports (not through `@/the-import`)
+   - Direct cross-module imports (not through `@/gen-import`)
    - Missing `validateDTO` middleware in routers for routes that accept a body
    - Unhandled promise branches (missing `return` after `next(error)`)
    - `any` types that can be replaced with proper types

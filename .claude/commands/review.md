@@ -10,7 +10,7 @@ Run a full code review on the files provided (or the current git diff if no file
 
 3. **Apply the code-reviewer agent checklist** across all files:
    - Module pattern compliance (router → validateDTO → controller → service)
-   - Import convention (`@/the-import` for cross-module)
+   - Import convention (`@/gen-import` for cross-module)
    - Error handling (AppError, asyncHandler, no raw throw)
    - Async safety (no floating promises)
    - Logging (createLogger, no sensitive fields)
