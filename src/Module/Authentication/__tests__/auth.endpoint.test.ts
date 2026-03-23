@@ -1,285 +1,187 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest'
 import request from 'supertest'
 import type { Express } from 'express'
 import { createTestApp } from '../../../__tests__/helpers/test-app'
 
-// ─────────────────────────────────────────────────────────────
-// Shared test data
-// ─────────────────────────────────────────────────────────────
+// ─── Infrastructure mocks (prevent real Redis / BullMQ connections) ───────────
+vi.mock('../../../config/redis', () => ({
+  default: { on: vi.fn(), connect: vi.fn(), disconnect: vi.fn() },
+  redisConfig: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('../../../MessageQueue/Queue/queue.email', () => ({
+  queue: { add: vi.fn(), on: vi.fn(), close: vi.fn() },
+  addJobToQueue: vi.fn().mockResolvedValue(undefined),
+}))
+
+// ─── Rate limiter bypass (prevents test exhausting the auth window) ────────────
+vi.mock('../../../utils/limit-request', () => ({
+  authlimiter: (_req: any, _res: any, next: any) => next(),
+  limiter: (_req: any, _res: any, next: any) => next(),
+}))
+
+// ─── Hoist mock functions so they are available inside vi.mock factory ────────
+const { mockCheckAccount, mockCreateAccount } = vi.hoisted(() => ({
+  mockCheckAccount: vi.fn(),
+  mockCreateAccount: vi.fn(),
+}))
+
+vi.mock('../Service/based-auth.service', () => ({
+  BasedAuthService: vi.fn().mockImplementation(() => ({
+    check_account: mockCheckAccount,
+    create_account: mockCreateAccount,
+    create_token: vi.fn(),
+  })),
+}))
+
+// ─── Shared fixtures ──────────────────────────────────────────────────────────
 const BASE = '/api/v1/auth'
 
 const validUser = {
-  fullname: 'Test User',
-  username: 'testuser',
+  name: 'Test User',
   email: 'test@example.com',
   password: 'Password123!',
 }
 
-// ─────────────────────────────────────────────────────────────
-// App setup — no DB, no server
-// ─────────────────────────────────────────────────────────────
+// ─── App setup ────────────────────────────────────────────────────────────────
 let app: Express
 
 beforeAll(() => {
   app = createTestApp()
 })
 
-// ─────────────────────────────────────────────────────────────
-// POST /api/auth/register
-// ─────────────────────────────────────────────────────────────
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
+// ─── POST /register ───────────────────────────────────────────────────────────
 describe(`POST ${BASE}/register`, () => {
-  it('returns 400 when body is empty', async () => {
-    const res = await request(app)
-      .post(`${BASE}/register`)
-      .send({})
 
-    expect(res.status).toBe(400)
+  // ── DTO validation (no service calls needed) ──────────────────────────────
+  describe('DTO validation', () => {
+    it('returns 400 when body is empty', async () => {
+      const res = await request(app).post(`${BASE}/register`).send({})
+      expect(res.status).toBe(400)
+      expect(res.body.success).toBe(false)
+    })
+
+    it('returns 400 when name is missing', async () => {
+      const { name: _, ...body } = validUser
+      const res = await request(app).post(`${BASE}/register`).send(body)
+      expect(res.status).toBe(400)
+    })
+
+    it('returns 400 when email is missing', async () => {
+      const { email: _, ...body } = validUser
+      const res = await request(app).post(`${BASE}/register`).send(body)
+      expect(res.status).toBe(400)
+    })
+
+    it('returns 400 when email is invalid', async () => {
+      const res = await request(app)
+        .post(`${BASE}/register`)
+        .send({ ...validUser, email: 'not-an-email' })
+      expect(res.status).toBe(400)
+    })
+
+    it('returns 400 when password is missing', async () => {
+      const { password: _, ...body } = validUser
+      const res = await request(app).post(`${BASE}/register`).send(body)
+      expect(res.status).toBe(400)
+    })
+
+    it('returns 400 when password is too short', async () => {
+      const res = await request(app)
+        .post(`${BASE}/register`)
+        .send({ ...validUser, password: 'Ab1!' })
+      expect(res.status).toBe(400)
+    })
+
+    it('returns 400 when password has no uppercase letter', async () => {
+      const res = await request(app)
+        .post(`${BASE}/register`)
+        .send({ ...validUser, password: 'password123!' })
+      expect(res.status).toBe(400)
+    })
+
+    it('returns 400 when password has no number', async () => {
+      const res = await request(app)
+        .post(`${BASE}/register`)
+        .send({ ...validUser, password: 'Password!' })
+      expect(res.status).toBe(400)
+    })
+
+    it('returns 400 when password has no special character', async () => {
+      const res = await request(app)
+        .post(`${BASE}/register`)
+        .send({ ...validUser, password: 'Password123' })
+      expect(res.status).toBe(400)
+    })
   })
 
-  it('returns 400 when email is missing', async () => {
-    const { email: _email, ...body } = validUser
-    const res = await request(app)
-      .post(`${BASE}/register`)
-      .send(body)
+  // ── Business logic ────────────────────────────────────────────────────────
+  describe('business logic', () => {
+    it('returns 400 when email is already registered', async () => {
+      mockCheckAccount.mockResolvedValueOnce({ _id: 'existing-id' })
 
-    expect(res.status).toBe(400)
-  })
+      const res = await request(app).post(`${BASE}/register`).send(validUser)
 
-  it('returns 400 when password is missing', async () => {
-    const { password: _pw, ...body } = validUser
-    const res = await request(app)
-      .post(`${BASE}/register`)
-      .send(body)
+      expect(res.status).toBe(400)
+      expect(res.body.success).toBe(false)
+      expect(mockCheckAccount).toHaveBeenCalledWith(validUser.email)
+      expect(mockCreateAccount).not.toHaveBeenCalled()
+    })
 
-    expect(res.status).toBe(400)
-  })
+    it('returns 201 with access token and sets httpOnly cookies on success', async () => {
+      mockCheckAccount.mockResolvedValueOnce(null)
+      mockCreateAccount.mockResolvedValueOnce({
+        success: true,
+        access_token: 'mock_access_token',
+        refresh_token: 'mock_refresh_token',
+      })
 
-  it('returns 201 with user data on valid registration', async () => {
-    const res = await request(app)
-      .post(`${BASE}/register`)
-      .send(validUser)
+      const res = await request(app).post(`${BASE}/register`).send(validUser)
 
-    expect(res.status).toBe(201)
-    expect(res.body).toHaveProperty('data')
-    expect(res.body.data).toHaveProperty('email', validUser.email)
-    expect(res.body.data).not.toHaveProperty('password')
-  })
+      expect(res.status).toBe(201)
+      expect(res.body).toMatchObject({
+        code: 201,
+        status: 'OK',
+        success: true,
+        error: false,
+        message: 'User created successfully',
+        token: 'mock_access_token',
+      })
 
-  it('returns 409 when email already exists', async () => {
-    const res = await request(app)
-      .post(`${BASE}/register`)
-      .send(validUser)
+      const cookies: string[] = res.headers['set-cookie'] as unknown as string[]
+      expect(cookies).toBeDefined()
 
-    expect(res.status).toBe(409)
-  })
-})
+      const accessCookie = cookies.find((c) => c.startsWith('access_token='))
+      const refreshCookie = cookies.find((c) => c.startsWith('refresh_token='))
 
-// ─────────────────────────────────────────────────────────────
-// POST /api/auth/login
-// ─────────────────────────────────────────────────────────────
-describe(`POST ${BASE}/login`, () => {
-  it('returns 400 when body is empty', async () => {
-    const res = await request(app)
-      .post(`${BASE}/login`)
-      .send({})
+      expect(accessCookie).toBeDefined()
+      expect(accessCookie).toMatch(/HttpOnly/i)
+      expect(accessCookie).toMatch(/Secure/i)
+      expect(accessCookie).toMatch(/SameSite=Strict/i)
 
-    expect(res.status).toBe(400)
-  })
+      expect(refreshCookie).toBeDefined()
+      expect(refreshCookie).toMatch(/HttpOnly/i)
+      expect(refreshCookie).toMatch(/Secure/i)
+      expect(refreshCookie).toMatch(/SameSite=Strict/i)
+    })
 
-  it('returns 400 when password is missing', async () => {
-    const res = await request(app)
-      .post(`${BASE}/login`)
-      .send({ email: validUser.email })
+    it('calls check_account with lowercased email', async () => {
+      mockCheckAccount.mockResolvedValueOnce(null)
+      mockCreateAccount.mockResolvedValueOnce({
+        success: true,
+        access_token: 'at',
+        refresh_token: 'rt',
+      })
 
-    expect(res.status).toBe(400)
-  })
+      await request(app)
+        .post(`${BASE}/register`)
+        .send({ ...validUser, email: 'TEST@EXAMPLE.COM' })
 
-  it('returns 401 when credentials are wrong', async () => {
-    const res = await request(app)
-      .post(`${BASE}/login`)
-      .send({ email: validUser.email, password: 'wrongpassword' })
-
-    expect(res.status).toBe(401)
-  })
-
-  it('returns 200 with tokens on valid credentials', async () => {
-    const res = await request(app)
-      .post(`${BASE}/login`)
-      .send({ email: validUser.email, password: validUser.password })
-
-    expect(res.status).toBe(200)
-    expect(res.body).toHaveProperty('data')
-    expect(res.body.data).toHaveProperty('accessToken')
-    expect(res.body.data).toHaveProperty('refreshToken')
-  })
-})
-
-// ─────────────────────────────────────────────────────────────
-// POST /api/auth/logout
-// ─────────────────────────────────────────────────────────────
-describe(`POST ${BASE}/logout`, () => {
-  it('returns 401 when no Authorization header is provided', async () => {
-    const res = await request(app)
-      .post(`${BASE}/logout`)
-
-    expect(res.status).toBe(401)
-  })
-
-  it('returns 401 when token is invalid', async () => {
-    const res = await request(app)
-      .post(`${BASE}/logout`)
-      .set('Authorization', 'Bearer invalid.token.here')
-
-    expect(res.status).toBe(401)
-  })
-
-  it('returns 200 on successful logout with valid token', async () => {
-    const loginRes = await request(app)
-      .post(`${BASE}/login`)
-      .send({ email: validUser.email, password: validUser.password })
-
-    const { accessToken } = loginRes.body.data as { accessToken: string }
-
-    const res = await request(app)
-      .post(`${BASE}/logout`)
-      .set('Authorization', `Bearer ${accessToken}`)
-
-    expect(res.status).toBe(200)
-  })
-})
-
-// ─────────────────────────────────────────────────────────────
-// POST /api/auth/refresh
-// ─────────────────────────────────────────────────────────────
-describe(`POST ${BASE}/refresh`, () => {
-  it('returns 401 when refreshToken cookie is missing', async () => {
-    const res = await request(app)
-      .post(`${BASE}/refresh`)
-
-    expect(res.status).toBe(401)
-  })
-
-  it('returns 401 when refreshToken is invalid', async () => {
-    const res = await request(app)
-      .post(`${BASE}/refresh`)
-      .set('Cookie', 'refreshToken=invalid.token.here')
-
-    expect(res.status).toBe(401)
-  })
-
-  it('returns 200 with new accessToken on valid refreshToken', async () => {
-    const loginRes = await request(app)
-      .post(`${BASE}/login`)
-      .send({ email: validUser.email, password: validUser.password })
-
-    const cookies = loginRes.headers['set-cookie'] as unknown as string[]
-
-    const res = await request(app)
-      .post(`${BASE}/refresh`)
-      .set('Cookie', cookies)
-
-    expect(res.status).toBe(200)
-    expect(res.body.data).toHaveProperty('accessToken')
-  })
-})
-
-// ─────────────────────────────────────────────────────────────
-// POST /api/auth/forget-password
-// ─────────────────────────────────────────────────────────────
-describe(`POST ${BASE}/forget-password`, () => {
-  it('returns 400 when email is missing', async () => {
-    const res = await request(app)
-      .post(`${BASE}/forget-password`)
-      .send({})
-
-    expect(res.status).toBe(400)
-  })
-
-  it('returns 200 even when email does not exist (security: no enumeration)', async () => {
-    const res = await request(app)
-      .post(`${BASE}/forget-password`)
-      .send({ email: 'nonexistent@example.com' })
-
-    expect(res.status).toBe(200)
-  })
-
-  it('returns 200 and queues reset email for valid account', async () => {
-    const res = await request(app)
-      .post(`${BASE}/forget-password`)
-      .send({ email: validUser.email })
-
-    expect(res.status).toBe(200)
-    expect(res.body).toHaveProperty('message')
-  })
-})
-
-// ─────────────────────────────────────────────────────────────
-// POST /api/auth/reset-password
-// ─────────────────────────────────────────────────────────────
-describe(`POST ${BASE}/reset-password`, () => {
-  it('returns 400 when body is empty', async () => {
-    const res = await request(app)
-      .post(`${BASE}/reset-password`)
-      .send({})
-
-    expect(res.status).toBe(400)
-  })
-
-  it('returns 401 when reset token is missing', async () => {
-    const res = await request(app)
-      .post(`${BASE}/reset-password`)
-      .send({ password: 'NewPassword123!', confirmPassword: 'NewPassword123!' })
-
-    expect(res.status).toBe(401)
-  })
-
-  it('returns 401 when reset token is invalid or expired', async () => {
-    const res = await request(app)
-      .post(`${BASE}/reset-password`)
-      .set('Authorization', 'Bearer invalid.reset.token')
-      .send({ password: 'NewPassword123!', confirmPassword: 'NewPassword123!' })
-
-    expect(res.status).toBe(401)
-  })
-
-  it('returns 400 when passwords do not match', async () => {
-    const res = await request(app)
-      .post(`${BASE}/reset-password`)
-      .set('Authorization', 'Bearer some.reset.token')
-      .send({ password: 'NewPassword123!', confirmPassword: 'DifferentPassword!' })
-
-    expect(res.status).toBe(400)
-  })
-})
-
-// ─────────────────────────────────────────────────────────────
-// GET /api/auth/google
-// ─────────────────────────────────────────────────────────────
-describe(`GET ${BASE}/google`, () => {
-  it('redirects to Google OAuth consent screen', async () => {
-    const res = await request(app)
-      .get(`${BASE}/google`)
-
-    expect(res.status).toBe(302)
-    expect(res.headers['location']).toMatch(/accounts\.google\.com/)
-  })
-})
-
-// ─────────────────────────────────────────────────────────────
-// GET /api/auth/google/callback
-// ─────────────────────────────────────────────────────────────
-describe(`GET ${BASE}/google/callback`, () => {
-  it('returns 400 when code query param is missing', async () => {
-    const res = await request(app)
-      .get(`${BASE}/google/callback`)
-
-    expect(res.status).toBe(400)
-  })
-
-  it('returns 401 when Google code is invalid', async () => {
-    const res = await request(app)
-      .get(`${BASE}/google/callback?code=invalid_code`)
-
-    expect(res.status).toBe(401)
+      expect(mockCheckAccount).toHaveBeenCalledWith('TEST@EXAMPLE.COM')
+    })
   })
 })

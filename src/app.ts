@@ -29,11 +29,13 @@ import { mongoDBConfig, redisConfig } from './config'
 import client from 'prom-client'
 import appConfig from './app.config'
 import { setupSwagger } from './swagger'
+import appModule from './app.module'
 
 const app: Express = express()
 
 appConfig(app)
 setupSwagger(app)
+appModule(app)
 
 app.get('/metrics', async (_req: Request, res: Response) => {
   res.set('Content-Type', client.register.contentType)
@@ -51,7 +53,7 @@ async function startServer() {
       mongoDBConfig().then(
         () => {
           app.listen(PORT, () => {
-            console.log('🌐 Server is running on:', process.env.API_LINK_DEV as string)
+            console.log('🌐 Server is running on:', process.env.API_LINK as string)
           })
         },
       ).catch((err) => {

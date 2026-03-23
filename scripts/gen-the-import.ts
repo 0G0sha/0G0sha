@@ -94,7 +94,7 @@ function analyzeFiles(files: string[]): FileInfo[] {
     const lastSegment = rel.split('/').pop()!.replace(/[^a-zA-Z0-9_$]/g, '_')
     const defaultAlias = hasDefault ? lastSegment || null : null
 
-    return [{ importPath: `@/${rel}`, types, values, defaultAlias }]
+    return [{ importPath: `./${rel}`, types, values, defaultAlias }]
   })
 }
 

@@ -1,5 +1,5 @@
 import type { Document, Model } from 'mongoose'
-import type { PaginatedResult, PaginateOptions, PaginationParams } from '@/@types'
+import type { PaginatedResult, PaginateOptions, PaginationParams } from '../@types'
 
 /**
  * Clamps page/limit to safe values and returns skip offset.

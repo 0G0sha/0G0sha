@@ -166,6 +166,10 @@ Free ($0) → Starter ($9/mo) → Pro ($29/mo) → Enterprise ($99/mo), differen
 
 **Token costs:** ≤50 words = 1, 51–200 = 3, 200+ = 5, cache hit = 0.
 
+## Hard Rules
+
+- **Never read, edit, or write any `.env` file** (`.env`, `.env.dev`, `.env.local`, `.env.production`, or any `.env*` variant). These files contain secrets. Use `.env.example` to understand required variables.
+
 ## Key Conventions
 
 - Import across modules only via `@/the-import`; run `pnpm gen:imports` after any new export.
