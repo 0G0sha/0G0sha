@@ -6,14 +6,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm install          # Install dependencies
-pnpm dev              # Development with hot reload (Express + Queue worker concurrently)
+pnpm dev              # Development with hot reload — Express server + Queue worker (NODE_ENV=development)
+pnpm dev:local        # Same but without NODE_ENV override
 pnpm build            # Compile TypeScript → dist/
-pnpm start            # Production: run compiled app + Queue worker
-pnpm test             # Jest (watch mode, open handles detection)
-pnpm test:local       # Jest in development mode
+pnpm start            # Production: compiled app + Queue worker concurrently
 pnpm lint             # ESLint check
-pnpm gen:imports      # Regenerate src/the-import.d.ts from all module exports
+pnpm gen:imports      # Regenerate src/the-import.ts from all module exports
 ```
+
+### Testing
+
+Two separate test runners coexist:
+
+```bash
+pnpm test             # Jest — unit tests (--runInBand, --detectOpenHandles)
+pnpm test:local       # Jest — unit tests in development mode
+
+pnpm test:e2e         # Vitest — e2e/endpoint tests (run once)
+pnpm test:e2e:watch   # Vitest — e2e tests in watch mode
+```
+
+Run a single Vitest file:
+```bash
+pnpm test:e2e -- src/Module/Authentication/__tests__/auth.endpoint.test.ts
+```
+
+Run a single Jest file:
+```bash
+pnpm test -- --testPathPattern=src/path/to/test
+```
+
+E2E tests use Vitest + Supertest. The test helper `src/__tests__/helpers/test-app.ts` builds an isolated Express app (no DB, no server) via `createTestApp()`. Tests live in `__tests__/` directories co-located with the module they test.
 
 Environment: copy `.env.example` to `.env` and fill in values before running.
 
@@ -25,15 +48,15 @@ Environment: copy `.env.example` to `.env` and fill in values before running.
 
 1. **ANALYZE** — Tokenizer + Classifier (categories: coding/writing/analysis/marketing/general) + Gap Scorer (1–10)
 2. **LEARN** — MongoDB similarity search + weight loader for rule personalization
-3. **TRANSFORM** — 7 rule engine sorted by learned weight + model adapters (Claude XML, GPT markdown)
+3. **TRANSFORM** — 7 rules sorted by learned weight + model adapters (Claude XML, GPT markdown)
 4. **MERGE & SCORE** — Borrow structure from high-scoring similar past prompts
 5. **RECORD & FEEDBACK** — Save to history; adjust rule weights on user rating
 
-### 7 Built-in Transformation Rules (sorted by weight at runtime)
+### 7 Built-in Transformation Rules
 
 `add_role`, `add_context`, `structure_task`, `add_constraints`, `add_output_format`, `improve_specificity`, `add_quality_markers`
 
-**Learning:** Rule weights (0.2–3.0, default 1.0) adjust per rating:
+**Learning:** Rule weights (0.2–3.0, default 1.0):
 - Score ≥7 → +0.1; Score <5 → −0.05; Weekly decay ×0.95
 
 ### Tech Stack
@@ -45,96 +68,86 @@ Environment: copy `.env.example` to `.env` and fill in values before running.
 | Database | MongoDB 6+ (Mongoose), Redis |
 | Auth | PASETO v4 tokens (`paseto` lib), bcryptjs |
 | Validation | `class-validator` + `class-transformer` (decorator-based DTOs) |
-| Logging | Pino (pretty in dev, JSON in prod) with sensitive-field redaction |
-| Metrics | Prometheus via `prom-client` |
+| Logging | Pino (pretty in dev, JSON in prod) |
+| Metrics | Prometheus via `prom-client` (exposed at `GET /metrics`) |
 | Queue | BullMQ (email jobs via Redis) |
 | Payments | Stripe + Paymob |
 | File uploads | Cloudinary |
 
-### Source Layout
+### Startup Order
+
+`app.ts` must import in this exact order to satisfy decorator requirements:
 
 ```
-src/
-  app.ts              # Entry point — connects DB/Redis, starts server
-  app.config.ts       # Middleware pipeline (Helmet, CORS, rate limit, Prometheus, Morgan, useragent)
-  app.module.ts       # Mounts all route modules onto the Express app
-  the-import.d.ts     # AUTO-GENERATED barrel — run `pnpm gen:imports` to update
-  swagger.ts          # Swagger/OpenAPI setup
-
-  config/
-    dotenv.ts         # Loads .env / .env.dev
-    mongoDB.ts        # MongoDB connection with 5-retry logic
-    redis.ts          # Redis client (dual localhost/prod mode), exports `redis` default + `redisConfig`
-    cloudinary.ts     # Cloudinary SDK init
-    index.ts          # Re-exports all configs
-
-  middleware/
-    validateDTO.ts    # Generic DTO validation middleware — uses class-validator + class-transformer
-
-  utils/
-    logger.ts         # createLogger(serviceName) → Pino instance; also exports root `logger`
-    limit-request.ts  # Two rate limiters: `limiter` (general) and `authlimiter` (auth routes)
-    pagination.ts     # paginate<T>(model, filter, options) — max limit clamped to 100
-    api-requesthandler.ts  # asyncHandler() wrapper
-    hashText.ts       # bcrypt helpers
-
-  Shared/
-    errors/
-      app-error.ts    # AppError class with static factories: .badRequest, .unauthorized, .notFound, .conflict, .tooMany, .internal
-      errorHandler.ts # Express error handler middleware
-
-  Providers/
-    cloudinary.provider.ts  # uploadToCloudinary(), multer `upload` middleware
-
-  MessageQueue/
-    Queue/queue.email.ts    # BullMQ queue + addJobToQueue()
-    jobs/job.process.emails.ts  # sendEmail job processor
-    worker.emails.ts        # BullMQ worker definition
-    index.ts                # Worker entrypoint (connects MongoDB then starts workers)
-
-  Module/
-    Authentication/
-      auth.module.ts        # Express Router — wires routes with validateDTO + controllers
-      auth.controller.ts    # Re-exports controllers (barrel)
-      DTO/index.dto.ts      # RegisterDTO with class-validator decorators
-      Controller/           # One file per endpoint (register, login, logout, refresh, etc.)
-      Service/
-        based-auth.service.ts  # BasedAuthService: check_account, create_account, create_token
-        0Auth.service.ts       # OauthService (Google OAuth)
-      utils/paseto.utils.ts   # token_PASETO(payload, type, expiresIn?) — switch on 'access'|'refresh'|'forget_password'
-    User/
-      Schema/user.schema.ts   # Mongoose UserModel
-      @types/index.d.ts       # IUser interface
+config/dotenv   →   reflect-metadata   →   process error handlers   →   express + app modules
 ```
+
+`reflect-metadata` must come before any module that uses class-validator or class-transformer decorators. `dotenv` must come before `reflect-metadata` so env vars are available to decorators at load time.
 
 ### Module Pattern
 
-Each feature module follows this structure:
-1. `auth.module.ts` — Router, applies `validateDTO(DTO)` then controller per route
-2. `DTO/index.dto.ts` — class-validator decorated class (one per operation)
-3. `Controller/*.controller.ts` — single exported `RequestHandler` using `asyncHandler`
-4. `Service/*.service.ts` — business logic class
-5. Register the router in `app.module.ts` → `app.use('/api/v1/...', module)`
+Every feature module follows this exact structure:
 
-### `the-import.d.ts` Convention
+```
+Module/FeatureName/
+  feature.module.ts         # Express Router — applies validateDTO then wires controllers
+  feature.controller.ts     # Barrel re-exporting all controllers in Controller/
+  DTO/index.dto.ts          # class-validator decorated DTO classes
+  Controller/
+    action.controller.ts    # One file per endpoint — single exported RequestHandler
+  Service/
+    based-feature.service.ts
+  __tests__/                # Vitest e2e tests for this module
+```
 
-`src/the-import.d.ts` is the **single barrel file** for all cross-module imports — never import directly across modules; always import from `@/the-import`. It is auto-generated by `pnpm gen:imports`. After adding a new export anywhere in `src/`, run that command to register it.
+Register in `app.module.ts`:
+```typescript
+app.use('/api/v1/feature', featureRouter)
+```
 
-### Request Augmentation
+`app.module.ts` is the single file that mounts all routers onto the Express app — it is the only place `app.use('/api/v1/...')` calls should appear.
 
-`app.config.ts` attaches to every request:
-- `req.lang` — `'en'` or `'ar'` from `Accept-Language` header
-- `req.mobileApp` — from `app` header
-- `req.clientIP` — resolved from Cloudflare / proxy headers
+### `the-import.ts` Convention
+
+`src/the-import.ts` is the **single barrel file** for all cross-module imports. Never import directly across module boundaries — always import from `@/the-import`. It is auto-generated by `pnpm gen:imports`. Run that command after adding any new export anywhere in `src/`.
+
+### asyncHandler and Express v5
+
+`asyncHandler` in `src/utils/api-requesthandler.ts` does **not** contain a try/catch — it relies on Express v5's built-in async error propagation. Controllers must call `next(AppError.xxx)` for application errors or simply throw an `AppError` and Express v5 will forward it to `errorHandler`.
 
 ### Auth Token Flow
 
-`token_PASETO(payload, type, expiresIn?)` in `paseto.utils.ts` handles all three token types via switch:
-- `access` → env `ACCESS_PRIVATE_KEY`, 2h TTL
-- `refresh` → env `REFRESH_PRIVATE_KEY`, 30d TTL
-- `forget_password` → env `REFRESH_PRIVATE_KEY`, 2h TTL
+`token_PASETO(payload, type, expiresIn?)` in `paseto.utils.ts`:
 
-Tokens + refresh are set as **httpOnly cookies** in the register controller.
+| Type | Env Key | TTL |
+|---|---|---|
+| `access` | `ACCESS_PRIVATE_KEY` | 2h |
+| `refresh` | `REFRESH_PRIVATE_KEY` | 30d |
+| `forget_password` | `REFRESH_PRIVATE_KEY` | 2h |
+
+Tokens are delivered as `httpOnly`, `secure`, `sameSite: 'strict'` cookies. `access_token` maxAge = 7_200_000 ms, `refresh_token` maxAge = 2_592_000_000 ms.
+
+### Password Hashing
+
+Passwords are hashed in the Mongoose `pre('save')` hook in `user.schema.ts` using bcrypt (salt rounds = 10). **Never hash manually in the service** — the schema hook handles it. Use `userDocument.comparePassword(candidate)` for verification.
+
+### User Schema Key Fields
+
+`IUser` fields relevant to the prompt engine and billing:
+- `apiKey` — auto-generated UUID v4, unique index, used for API access
+- `plan` — `'free' | 'starter' | 'pro' | 'enterprise'`, default `'free'`
+- `tokens` — `{ used: number, limit: number, lastResetAt: Date }` — daily token ledger, limit enforced per plan
+
+### Request Augmentation
+
+`app.config.ts` attaches to every `req`:
+- `req.lang` — `'en'` or `'ar'` from `Accept-Language` header
+- `req.mobileApp` — from `app` header
+- `req.clientIP` — resolved from Cloudflare → `x-real-ip` → `x-forwarded-for` → socket
+
+### Static Files
+
+`/v0/public/*` is served from the `cdn/` directory at the project root via `express.static`.
 
 ### Planned Collections (not yet implemented)
 
@@ -145,7 +158,7 @@ Tokens + refresh are set as **httpOnly cookies** in the register controller.
 - `POST /api/prompts/optimize` — Core engine endpoint
 - `GET /api/prompts/history` — Paginated history
 - `PATCH /api/prompts/:id/rate` — Feedback that drives weight learning
-- Stripe webhook: `POST /api/webhooks/stripe`
+- `POST /api/webhooks/stripe` — Stripe webhook
 
 ### Subscription Tiers
 
@@ -153,13 +166,13 @@ Free ($0) → Starter ($9/mo) → Pro ($29/mo) → Enterprise ($99/mo), differen
 
 **Token costs:** ≤50 words = 1, 51–200 = 3, 200+ = 5, cache hit = 0.
 
-### Key Conventions
+## Key Conventions
 
-- Always import from `@/the-import`; run `pnpm gen:imports` after adding new exports.
-- Use `createLogger("ServiceName")` from `src/utils/logger.ts` in every service/module.
-- Apply `authlimiter` on auth routes, `limiter` is applied globally in `app.config.ts`.
-- Pagination via `paginate<T>(model, filter, options)` from `src/utils/pagination.ts`.
-- Validate request bodies with `validateDTO(DTOClass)` middleware before controllers.
+- Import across modules only via `@/the-import`; run `pnpm gen:imports` after any new export.
+- `createLogger("ServiceName")` in every service and module file.
+- `authlimiter` on auth routes; global `limiter` is applied in `app.config.ts` — do not re-apply.
+- `paginate<T>(model, filter, options)` for all paginated queries — max limit is clamped to 100.
+- `validateDTO(DTOClass)` middleware must precede every controller that reads `req.body`.
+- `AppError` static factories for all thrown errors — never `new Error()` in controllers or services.
 - TypeScript build excludes test files (`tsconfig.build.json`); tests use `tsconfig.test.json`.
 - PNPM workspace uses dependency catalogs in `pnpm-workspace.yaml` — add new deps to the catalog, not inline in `package.json`.
-- `reflect-metadata` must be imported before any decorator usage; it is imported at the top of `app.ts`.

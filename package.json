@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
-    "dev": "concurrently \"NODE_ENV=development nodemon -L\" \"NODE_ENV=development npx ts-node --transpile-only -r tsconfig-paths/register ./src/MessageQueue/index.ts\"",
-    "dev:local": "concurrently \"nodemon -L\" \"npx ts-node --transpile-only -r tsconfig-paths/register ./src/MessageQueue/index.ts\"",
+    "dev": "concurrently \"NODE_ENV=development nodemon -L\" \"NODE_ENV=development tsx ./src/MessageQueue/index.ts\"",
+    "dev:local": "concurrently \"nodemon -L\" \"tsx ./src/MessageQueue/index.ts\"",
     "build": "tsc",
     "start": "concurrently \"node ./dist/app.js\" \"node ./dist/MessageQueue/index.js\"",
     "test": "jest --detectOpenHandles --runInBand",
@@ -17,7 +17,7 @@
     "taze:update": "npx taze major -w",
     "taze:patch": "npx taze patch",
     "compress:ubuntu": "sudo zip -r project.zip .",
-    "gen:imports": "ts-node scripts/gen-the-import.ts"
+    "gen:imports": "tsx scripts/gen-the-import.ts"
   },
   "keywords": [],
   "author": "Mohammed Elrefai <elrefai99@gmail.com>",
@@ -67,19 +67,16 @@
     "@types/request-ip": "catalog:types",
     "@types/sharp": "catalog:types",
     "@types/streamifier": "catalog:types",
+    "@types/supertest": "catalog:testing",
     "@types/swagger-jsdoc": "catalog:types",
     "@types/swagger-ui-express": "catalog:types",
     "@types/uuid": "catalog:types",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
-    "@types/supertest": "catalog:testing",
-    "supertest": "catalog:testing",
-    "vite-tsconfig-paths": "catalog:testing",
-    "vitest": "catalog:testing",
     "bull-arena": "catalog:tools",
     "bullmq": "catalog:tools",
-    "class-validator": "catalog:validation",
     "class-transformer": "catalog:validation",
+    "class-validator": "catalog:validation",
     "eslint": "^10.1.0",
     "express-useragent": "catalog:runtime",
     "globals": "^17.4.0",
@@ -90,8 +87,12 @@
     "redis": "catalog:tools",
     "reflect-metadata": "^0.2.2",
     "request-ip": "catalog:runtime",
+    "supertest": "catalog:testing",
     "ts-node": "catalog:tools",
     "tsconfig-paths": "catalog:tools",
-    "typescript": "catalog:tools"
+    "tsx": "^4.21.0",
+    "typescript": "catalog:tools",
+    "vite-tsconfig-paths": "catalog:testing",
+    "vitest": "catalog:testing"
   }
 }
