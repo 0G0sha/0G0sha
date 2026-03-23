@@ -9,4 +9,3 @@ SQL
 *.log
 logs
 package-lock.json
-CLAUDE.md

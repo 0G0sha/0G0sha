@@ -51,7 +51,7 @@ async function startServer() {
       mongoDBConfig().then(
         () => {
           app.listen(PORT, () => {
-            console.log('🌐 Server is running on:', process.env.NODE_ENV === 'development' ? String(process.env.SITE_API_Local_URL) : String(process.env.SITE_API_URL))
+            console.log('🌐 Server is running on:', process.env.API_LINK_DEV as string)
           })
         },
       ).catch((err) => {

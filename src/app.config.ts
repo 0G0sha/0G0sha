@@ -37,13 +37,8 @@ const activeRequests = new client.Gauge({
 register.registerMetric(activeRequests)
 
 export const allowedOrigins: string[] = [
-     process.env.SITE_URL_TEST as string,
-     process.env.SITE_URL_LIVE as string,
-     process.env.SITE_URL_LIVE_VERCEL as string,
-     process.env.SITE_URL_LIVE_FLYIO as string,
-     process.env.SITE_URL_LIVE_DASHBOARD as string,
-     process.env.APS_SANDBOX_LINK as string,
-     process.env.APS_LIVE_LINK as string,
+  process.env.SITE_URL_TEST as string,
+  process.env.SITE_URL_LIVE as string,
 ]
 export default (app: Application) => {
   const corsOptions: object = {
@@ -111,18 +106,18 @@ export default (app: Application) => {
   app.use(async (req: Request | any, res: Response, next: NextFunction) => {
     // get langouage of headers
     req.lang =
-               req.headers['accept-language'] === 'ar' ||
-                    req.headers['accept-language'] === 'en'
-                 ? req.headers['accept-language']
-                 : ('en' as string)
+      req.headers['accept-language'] === 'ar' ||
+        req.headers['accept-language'] === 'en'
+        ? req.headers['accept-language']
+        : ('en' as string)
     req.mobileApp =
-               req.headers.app === 'app' ? 'app' : (req.headers.app as string)
+      req.headers.app === 'app' ? 'app' : (req.headers.app as string)
     req.clientIP =
-               req.headers['cf-connecting-ip'] ||
-               req.headers['x-real-ip'] ||
-               req.headers['x-forwarded-for'] ||
-               req.socket.remoteAddress ||
-               ('' as string)
+      req.headers['cf-connecting-ip'] ||
+      req.headers['x-real-ip'] ||
+      req.headers['x-forwarded-for'] ||
+      req.socket.remoteAddress ||
+      ('' as string)
 
     if (req.path === '/metrics') {
       return next()

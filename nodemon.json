@@ -3,5 +3,5 @@
     "./src"
   ],
   "ext": "ts",
-  "exec": "ts-node -r ./src/app.ts"
+  "exec": "tsx ./src/app.ts"
 }
