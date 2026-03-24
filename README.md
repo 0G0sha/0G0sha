@@ -2,6 +2,8 @@
 
 # 0Gosha
 
+<img src="https://lh3.googleusercontent.com/d/1VEvn9IHM9hGmx2YRhfvKiqExMB57ojfK" width="200" alt="0Gosha" />
+
 **Pure AI agent engine that optimizes prompts - learns from user feedback.**
 
 [![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](package.json)
@@ -17,8 +19,6 @@ No AI API calls. No OpenAI. No Claude API. 0Gosha is a self-contained rule-based
 ---
 
 ## How It Works
-
-![Flow Diagrams](https://lh3.googleusercontent.com/d/1amoHFhbnDXEAuV9zJiROl9sb7zr0MS1m)
 
 ```
 Raw text → Analyze → Learn → Transform → Score → Return optimized prompt
