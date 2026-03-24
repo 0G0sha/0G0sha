@@ -14,6 +14,7 @@ export interface IUser extends Document {
      password: string
      avatar: string;
      apiKey: string;
+     googleId: string;
      plan: USER_PLAN;
      tokens: Tokens;
      subscription: Types.ObjectId;

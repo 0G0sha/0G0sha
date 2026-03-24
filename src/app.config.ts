@@ -6,7 +6,10 @@ import helmet from 'helmet'
 import { limiter } from './utils/limit-request'
 import client from 'prom-client'
 import * as useragent from 'express-useragent'
-import { logger } from './utils/logger'
+import { createWriteStream } from 'node:fs'
+import { resolve } from 'node:path'
+
+const morganLogStream = createWriteStream(resolve(process.cwd(), 'logs', 'app.log'), { flags: 'a' })
 
 const register = new client.Registry()
 client.collectDefaultMetrics({ register })
@@ -91,9 +94,8 @@ export default (app: Application) => {
     morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined', {
       stream: {
         write: (message) => {
-          process.env.NODE_ENV === 'development'
-            ? process.stdout.write(message)
-            : process.stdout.write(message) && logger.info(message.trim())
+          process.stdout.write(message)
+          morganLogStream.write(message)
         },
       },
     }),

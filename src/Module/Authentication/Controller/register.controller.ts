@@ -1,7 +1,8 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express'
 import { asyncHandler } from '../../../utils/api-requesthandler'
-import { AppError, BasedAuthService } from '../../../gen-import'
 import type { RegisterDTO } from '../DTO/index.dto'
+import { AppError } from '../../../Shared/errors/app-error'
+import { BasedAuthService } from '../Service/based-auth.service'
 
 export const registerController: RequestHandler = asyncHandler(
      async (req: Request, res: Response, next: NextFunction) => {
@@ -21,7 +22,7 @@ export const registerController: RequestHandler = asyncHandler(
           if (new_user.success) {
                res.cookie("access_token", new_user.access_token, { httpOnly: true, secure: true, sameSite: "strict", maxAge: 1000 * 60 * 60 * 2 });
                res.cookie("refresh_token", new_user.refresh_token, { httpOnly: true, secure: true, sameSite: "strict", maxAge: 1000 * 60 * 60 * 24 * 30, });
-               res.status(201).json({ code: 201, status: "OK", success: true, error: false, message: "User created successfully", token: new_user.access_token })
+               res.status(201).json({ code: 201, status: "Created", timestamp: new Date(), success: true, error: false, message: "User created successfully", token: new_user.access_token })
                return
           }
      }

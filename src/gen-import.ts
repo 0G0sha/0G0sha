@@ -6,10 +6,14 @@
 export type { PaginationParams, PaginationMeta, PaginatedResult, PaginateOptions, IUserRequest } from './@types';
 export { addJobToQueue, queue } from './MessageQueue/Queue/queue.email';
 export { sendEmail, jobProcessor } from './MessageQueue/jobs/job.process.emails';
+export { loginController } from './Module/Authentication/Controller/Login.controller';
+export { forgetPasswordController } from './Module/Authentication/Controller/forgetPassword.controller';
+export { googleController } from './Module/Authentication/Controller/googleCallBack.controller';
 export { logoutController } from './Module/Authentication/Controller/logout.controller';
 export { refreshController } from './Module/Authentication/Controller/refresh.controller';
 export { registerController } from './Module/Authentication/Controller/register.controller';
-export { RegisterDTO } from './Module/Authentication/DTO/index.dto';
+export { resetPasswordController } from './Module/Authentication/Controller/resetPassword.controller';
+export { RegisterDTO, LoginDTO } from './Module/Authentication/DTO/index.dto';
 export { OauthService } from './Module/Authentication/Service/0Auth.service';
 export { BasedAuthService } from './Module/Authentication/Service/based-auth.service';
 export { token_PASETO } from './Module/Authentication/utils/paseto.utils';

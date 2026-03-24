@@ -1,5 +1,4 @@
 import './config/dotenv'
-import 'reflect-metadata'
 import { logger } from './utils/logger'
 process
   .on('unhandledRejection', (reason, promise) => {

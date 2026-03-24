@@ -33,6 +33,10 @@ const userSchema = new Schema<IUser>({
     type: String,
     default: () => uuidv4(),
   },
+  googleId: {
+    type: String,
+    default: '',
+  },
   plan: {
     type: String,
     enum: USER_PLAN,

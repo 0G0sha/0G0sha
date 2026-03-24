@@ -1,26 +1,32 @@
-import { IsEmail, IsNotEmpty, IsString, Matches, MaxLength, MinLength, } from 'class-validator'
+import { z } from 'zod'
 
-export class RegisterDTO {
-     @IsNotEmpty({ message: 'Name is required' })
-     @IsString({ message: 'Name must be a string' })
-     @MinLength(2, { message: 'Name must be at least 2 characters' })
-     @MaxLength(50, { message: 'Name must not exceed 50 characters' })
-     name: string
+const passwordSchema = z
+     .string({ required_error: 'Password is required' })
+     .min(8, 'Password must be at least 8 characters')
+     .max(64, 'Password must not exceed 64 characters')
+     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+     .regex(/[0-9]/, 'Password must contain at least one number')
+     .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Password must contain at least one special character')
 
-     @IsNotEmpty({ message: 'Email is required' })
-     @IsEmail({}, { message: 'Email must be a valid email address' })
-     @MaxLength(100, { message: 'Email must not exceed 100 characters' })
-     email: string
+export const RegisterDTO = z.object({
+     name: z
+          .string({ required_error: 'Name is required' })
+          .min(2, 'Name must be at least 2 characters')
+          .max(50, 'Name must not exceed 50 characters'),
+     email: z
+          .string({ required_error: 'Email is required' })
+          .email('Email must be a valid email address')
+          .max(100, 'Email must not exceed 100 characters'),
+     password: passwordSchema,
+})
+export type RegisterDTO = z.infer<typeof RegisterDTO>
 
-     @IsNotEmpty({ message: 'Password is required' })
-     @IsString({ message: 'Password must be a string' })
-     @MinLength(8, { message: 'Password must be at least 8 characters' })
-     @MaxLength(64, { message: 'Password must not exceed 64 characters' })
-     @Matches(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
-     @Matches(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
-     @Matches(/[0-9]/, { message: 'Password must contain at least one number' })
-     @Matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, {
-          message: 'Password must contain at least one special character',
-     })
-     password: string
-}
+export const LoginDTO = z.object({
+     email: z
+          .string({ required_error: 'Email is required' })
+          .email('Email must be a valid email address')
+          .max(100, 'Email must not exceed 100 characters'),
+     password: passwordSchema,
+})
+export type LoginDTO = z.infer<typeof LoginDTO>

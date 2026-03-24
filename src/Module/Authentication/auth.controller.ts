@@ -1,3 +1,7 @@
 export * from './Controller/register.controller'
 export * from './Controller/refresh.controller'
 export * from './Controller/logout.controller'
+export * from './Controller/Login.controller'
+export * from './Controller/googleCallBack.controller'
+export * from './Controller/forgetPassword.controller'
+export * from './Controller/resetPassword.controller'
