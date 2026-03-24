@@ -67,7 +67,7 @@ Environment: copy `.env.example` to `.env` and fill in values before running.
 | Language | TypeScript (strict, extends `@mohamed-elrefai/tsconfigs`) |
 | Database | MongoDB 6+ (Mongoose), Redis |
 | Auth | PASETO v4 tokens (`paseto` lib), bcryptjs |
-| Validation | `class-validator` + `class-transformer` (decorator-based DTOs) |
+| Validation | Zod (schema-based DTOs) |
 | Logging | Pino (pretty in dev, JSON in prod) |
 | Metrics | Prometheus via `prom-client` (exposed at `GET /metrics`) |
 | Queue | BullMQ (email jobs via Redis) |
@@ -76,13 +76,13 @@ Environment: copy `.env.example` to `.env` and fill in values before running.
 
 ### Startup Order
 
-`app.ts` must import in this exact order to satisfy decorator requirements:
+`app.ts` must import in this exact order:
 
 ```
-config/dotenv   →   reflect-metadata   →   process error handlers   →   express + app modules
+config/dotenv   →   process error handlers   →   express + app modules
 ```
 
-`reflect-metadata` must come before any module that uses class-validator or class-transformer decorators. `dotenv` must come before `reflect-metadata` so env vars are available to decorators at load time.
+`dotenv` must be the very first import so env vars are available before any config or module is loaded.
 
 ### Module Pattern
 
@@ -92,7 +92,7 @@ Every feature module follows this exact structure:
 Module/FeatureName/
   feature.module.ts         # Express Router — applies validateDTO then wires controllers
   feature.controller.ts     # Barrel re-exporting all controllers in Controller/
-  DTO/index.dto.ts          # class-validator decorated DTO classes
+  DTO/index.dto.ts          # Zod schemas — export both the schema and its inferred type (same name)
   Controller/
     action.controller.ts    # One file per endpoint — single exported RequestHandler
   Service/
@@ -176,7 +176,7 @@ Free ($0) → Starter ($9/mo) → Pro ($29/mo) → Enterprise ($99/mo), differen
 - `createLogger("ServiceName")` in every service and module file.
 - `authlimiter` on auth routes; global `limiter` is applied in `app.config.ts` — do not re-apply.
 - `paginate<T>(model, filter, options)` for all paginated queries — max limit is clamped to 100.
-- `validateDTO(DTOClass)` middleware must precede every controller that reads `req.body`.
+- `validateDTO(ZodSchema)` middleware must precede every controller that reads `req.body`. Pass the Zod schema (e.g. `validateDTO(RegisterDTO)`), not a class.
 - `AppError` static factories for all thrown errors — never `new Error()` in controllers or services.
 - TypeScript build excludes test files (`tsconfig.build.json`); tests use `tsconfig.test.json`.
 - PNPM workspace uses dependency catalogs in `pnpm-workspace.yaml` — add new deps to the catalog, not inline in `package.json`.

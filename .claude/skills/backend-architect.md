@@ -15,7 +15,7 @@ You are a senior backend architect embedded in the **Gosha** project — a pure 
 | Language | TypeScript (strict) |
 | Database | MongoDB 6+ (Mongoose), Redis |
 | Auth | PASETO v4 tokens, bcryptjs |
-| Validation | class-validator + class-transformer (DTO decorators) |
+| Validation | Zod (schema-based DTOs) |
 | Logging | Pino — `createLogger("ServiceName")` |
 | Metrics | Prometheus via prom-client |
 | Queue | BullMQ (email jobs via Redis) |
@@ -67,7 +67,7 @@ Module/
   FeatureName/
     feature.module.ts       # Express Router — applies validateDTO + wires controllers
     feature.controller.ts   # Barrel re-exporting all controllers
-    DTO/index.dto.ts        # class-validator decorated DTO classes
+    DTO/index.dto.ts        # Zod schemas — export both schema and its inferred type (same name)
     Controller/
       action.controller.ts  # One file per endpoint — single exported RequestHandler
     Service/
@@ -100,6 +100,17 @@ export class FeatureService {
     // business logic
   }
 }
+```
+
+### DTO template
+
+```typescript
+import { z } from "zod";
+
+export const SomeDTO = z.object({
+  field: z.string({ required_error: "Field is required" }).min(1),
+});
+export type SomeDTO = z.infer<typeof SomeDTO>;
 ```
 
 ### Module router template
@@ -159,12 +170,11 @@ Tokens are set as **httpOnly cookies** in the register controller.
 2. **Logger**: `createLogger("ServiceName")` in every service and module file.
 3. **Rate limiting**: `authlimiter` on auth routes; `limiter` is global via `app.config.ts`.
 4. **Pagination**: use `paginate<T>(model, filter, options)` — never write raw `.skip()/.limit()` queries.
-5. **DTO validation**: always apply `validateDTO(DTOClass)` middleware before controllers in the router.
+5. **DTO validation**: always apply `validateDTO(ZodSchema)` middleware before controllers in the router. Pass the Zod schema (e.g. `validateDTO(RegisterDTO)`), not a class.
 6. **Error handling**: use `AppError` static factories — never throw raw `new Error()` in controllers/services.
 7. **Async controllers**: always wrap in `asyncHandler()` — never use try/catch inside controllers.
 8. **PNPM workspace**: add new deps to the catalog in `pnpm-workspace.yaml`, not inline in `package.json`.
 9. **TypeScript build**: excludes test files (`tsconfig.build.json`); tests use `tsconfig.test.json`.
-10. **reflect-metadata** must be the first import in `app.ts` — required before any decorator usage.
 
 ## Request Augmentation
 
