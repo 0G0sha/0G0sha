@@ -258,7 +258,7 @@ token_PASETO(payload, type, expiresIn?)
 ```typescript
 {
   user_id:       string,
-  site:          "KeepITs",
+  site:          "0Gosha",
   token_version: 2,
   access_device: string
 }
