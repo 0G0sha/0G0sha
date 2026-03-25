@@ -93,10 +93,14 @@ Module/FeatureName/
   feature.module.ts         # Express Router — applies validateDTO then wires controllers
   feature.controller.ts     # Barrel re-exporting all controllers in Controller/
   DTO/index.dto.ts          # Zod schemas — export both the schema and its inferred type (same name)
+  @types/index.d.ts         # TypeScript interfaces for this module's domain models
   Controller/
     action.controller.ts    # One file per endpoint — single exported RequestHandler
   Service/
     based-feature.service.ts
+  Schema/
+    model.schema.ts         # Mongoose schema + model export
+  middleware/               # Optional — module-specific middleware (e.g. profileMiddleware)
   __tests__/                # Vitest e2e tests for this module
 ```
 
@@ -127,6 +131,8 @@ app.use('/api/v1/feature', featureRouter)
 
 Tokens are delivered as `httpOnly`, `secure`, `sameSite: 'strict'` cookies. `access_token` maxAge = 7_200_000 ms, `refresh_token` maxAge = 2_592_000_000 ms.
 
+**Verification:** `profileMiddleware` (`Module/User/middleware/profile.middleware.ts`) reads the access token from the `Authorization: Bearer <token>` header (not cookies). It uses `PUBLIC_ACCESS_TOKEN_SECRET` (not the private key) for verification.
+
 ### Password Hashing
 
 Passwords are hashed in the Mongoose `pre('save')` hook in `user.schema.ts` using bcrypt (salt rounds = 10). **Never hash manually in the service** — the schema hook handles it. Use `userDocument.comparePassword(candidate)` for verification.
@@ -149,9 +155,18 @@ Passwords are hashed in the Mongoose `pre('save')` hook in `user.schema.ts` usin
 
 `/v0/public/*` is served from the `cdn/` directory at the project root via `express.static`.
 
-### Planned Collections (not yet implemented)
+### Implemented Schemas (not yet wired to routes)
 
-`prompt_history`, `learned_weights`, `plans`, `templates`, `token_ledger` (90-day TTL), `payment_history`
+| Model | Collection | Location |
+|---|---|---|
+| `PromptHistoryModel` | `prompt_history` | `Module/prompt/Schema/prompt.schema.ts` |
+| `LearnedWeightModel` | `learned_weight` | `Module/agent/Schema/learned.weight.schema.ts` |
+| `PlansModel` | `plans` | `Module/subscription/Schema/plans.schema.ts` |
+| `TemplateModel` | `templates` | `Module/template/Schema/template.schema.ts` |
+| `TokenLedgerModel` | `token_ledger` | `Module/subscription/Schema/TokenLedger.schema.ts` |
+| `PaymentHistoryModel` | `payment_history` | `Module/subscription/Schema/payment.history.schema.ts` |
+
+Currently `app.module.ts` only mounts `/api/v1/auth`. User, prompt, subscription, and template modules have schemas defined but are not yet registered in `app.module.ts`.
 
 ### Planned API Routes
 
