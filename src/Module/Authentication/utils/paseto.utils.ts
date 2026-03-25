@@ -36,7 +36,7 @@ export const token_PASETO = async (payload: any, type: TokenType, expiresIn?: st
       const tokenForgetPassword = await V4.sign(
         {
           data: { user_id: payload.data.user_id },
-          site: 'KeepITs',
+          site: '0Gosha',
           token_version: 2,
           access_device: payload.access_device,
         },
