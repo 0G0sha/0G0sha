@@ -65,7 +65,7 @@ const swaggerUiOptions = {
       display: inline-block;
       width: 150px;
       height: 150px;
-      background-image: url('/v0/public/egy-stay-logo.png');
+      background-image: url('/v0/cdn/0Gosha.png');
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
@@ -264,7 +264,7 @@ const swaggerUiOptions = {
     }
   `,
   customSiteTitle: '0Gosha API Docs',
-  customfavIcon: '/v0/public/favicon.ico',
+  customfavIcon: '/v0/cdn/favicon.ico',
 }
 
 export function setupSwagger(app: Express): void {

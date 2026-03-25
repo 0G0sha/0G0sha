@@ -87,7 +87,8 @@ export default (app: Application) => {
     }),
   )
 
-  app.use('/v0/public', express.static('cdn'))
+  app.use('/v0/cdn', express.static('assets'))
+  app.use('/v0/public', express.static('public'))
   app.use(cors(corsOptions))
   app.use(cookieParser())
   app.use(
