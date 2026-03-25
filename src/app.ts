@@ -24,17 +24,13 @@ process
     }, 500)
   })
 import express, { type Express, type Request, type Response } from 'express'
-import { mongoDBConfig, redisConfig } from './config'
 import client from 'prom-client'
-import appConfig from './app.config'
-import { setupSwagger } from './swagger'
-import appModule from './app.module'
-
+import { app_module, setupSwagger, app_config, mongoDBConfig, redisConfig } from './gen-import'
 const app: Express = express()
 
-appConfig(app)
+app_config(app)
 setupSwagger(app)
-appModule(app)
+app_module(app)
 
 app.get('/metrics', async (_req: Request, res: Response) => {
   res.set('Content-Type', client.register.contentType)

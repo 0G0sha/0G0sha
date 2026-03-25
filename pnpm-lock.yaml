@@ -108,8 +108,8 @@ catalogs:
       specifier: ^10.1.0
       version: 10.1.0
     gen-import:
-      specifier: ^0.2.0
-      version: 0.2.0
+      specifier: ^0.4.0
+      version: 0.4.0
     globals:
       specifier: ^17.4.0
       version: 17.4.0
@@ -372,7 +372,7 @@ importers:
         version: 2.1.0
       gen-import:
         specifier: catalog:tools
-        version: 0.2.0
+        version: 0.4.0
       globals:
         specifier: catalog:tools
         version: 17.4.0
@@ -1811,8 +1811,8 @@ packages:
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
 
-  gen-import@0.2.0:
-    resolution: {integrity: sha512-z+vJ2x3J4P2Lg1NcSofiDvASzHC+huRdl1ozxZLoTG+rWiJIpXbSXgwMEyyV9Ed3W5bOcfDzNiaAdKajs1LsTw==}
+  gen-import@0.4.0:
+    resolution: {integrity: sha512-76EtShTKznhiBQI6hRLmP5UHn9Sdn+Sqk+0vfh8f5k1/5GIcePhh2xNPP7kpckCnzeVPX5dGj3Rx6DaR/5lwaw==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -4283,7 +4283,7 @@ snapshots:
 
   function-bind@1.1.2: {}
 
-  gen-import@0.2.0:
+  gen-import@0.4.0:
     dependencies:
       typescript: 6.0.2
 
