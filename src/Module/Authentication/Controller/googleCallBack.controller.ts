@@ -1,34 +1,26 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
-import axios from "axios";
-import bcrypt from "bcryptjs";
-import { randomBytes } from "node:crypto";
 import { asyncHandler } from "../../../utils/api-requesthandler";
 import { AppError } from "../../../Shared/errors/app-error";
-import { UserModel } from "../../User/Schema/user.schema";
 import { token_PASETO } from "../utils/paseto.utils";
+import { OauthService } from "../auth.service";
 
 
 export const googleController: RequestHandler = asyncHandler(
      async (req: Request, res: Response, next: NextFunction) => {
-          const { access_token } = req.body;
-          const response = await axios.get(
-               "https://www.googleapis.com/oauth2/v3/userinfo",
-               { headers: { Authorization: `Bearer ${access_token}` } },
-          );
+          const { access_token } = req.body
 
-          if (!response.data) {
+          const authService = new OauthService()
+
+          const user = await authService.user_data(access_token);
+
+          if (!user.googleUser) {
                next(AppError.unauthorized("Google data verification failed"));
                return;
           }
 
-          const googleUser = await response.data;
-          const cUser = await UserModel.findOne(
-               { email: googleUser.email.toLowerCase() },
-               { _id: 1, tokenVersion: 1 },
-          );
-          if (cUser) {
+          if (user.data) {
                const tokenPayload = {
-                    data: { user_id: cUser._id },
+                    data: { user_id: user.data._id },
                     access_device: req.headers["user-agent"] as string,
                }
 
@@ -58,22 +50,14 @@ export const googleController: RequestHandler = asyncHandler(
                return;
           }
 
-          const outputString = googleUser.name.replace(/\s/g, "-");
-          const finalName = outputString + Math.floor(Math.random() * 10000001);
-          const password = randomBytes(32).toString("hex");
-          const salt = await bcrypt.genSalt(10);
-          const hash = await bcrypt.hash(password, salt);
-
-          const newUser = await UserModel.create({
-               fullname: googleUser.given_name + " " + googleUser.family_name,
-               email: googleUser.email,
-               password: hash,
-               username: finalName,
-               googleId: googleUser.sub,
-               avatar: googleUser.picture,
+          const newUser = await authService.createNewAccount({
+               name: user.googleUser.given_name + " " + user.googleUser.family_name,
+               email: user.googleUser.email,
+               sub: user.googleUser.sub,
+               picture: user.googleUser.picture,
           });
           const tokenPayload = {
-               data: { user_id: newUser._id },
+               data: { user_id: newUser.data._id },
                access_device: req.headers["user-agent"] as string,
           }
 
