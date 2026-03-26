@@ -151,6 +151,14 @@ Passwords are hashed in the Mongoose `pre('save')` hook in `user.schema.ts` usin
 - `req.mobileApp` — from `app` header
 - `req.clientIP` — resolved from Cloudflare → `x-real-ip` → `x-forwarded-for` → socket
 
+### MessageQueue
+
+`src/MessageQueue/` contains a BullMQ worker for async email jobs. It runs as a separate process alongside the Express server (`pnpm dev` / `pnpm start` use `concurrently` to run both). Queue jobs are defined under `src/MessageQueue/jobs/`. Do not add synchronous email logic in controllers — always enqueue via the queue interface.
+
+### Swagger / API Docs
+
+Auth and User modules have dedicated `swagger.ts` files co-located with the module. These are wired into the app and serve interactive docs. Follow this pattern when adding new modules.
+
 ### Static Files
 
 `/v0/public/*` is served from the `cdn/` directory at the project root via `express.static`.
@@ -160,13 +168,17 @@ Passwords are hashed in the Mongoose `pre('save')` hook in `user.schema.ts` usin
 | Model | Collection | Location |
 |---|---|---|
 | `PromptHistoryModel` | `prompt_history` | `Module/prompt/Schema/prompt.schema.ts` |
-| `LearnedWeightModel` | `learned_weight` | `Module/agent/Schema/learned.weight.schema.ts` |
 | `PlansModel` | `plans` | `Module/subscription/Schema/plans.schema.ts` |
 | `TemplateModel` | `templates` | `Module/template/Schema/template.schema.ts` |
 | `TokenLedgerModel` | `token_ledger` | `Module/subscription/Schema/TokenLedger.schema.ts` |
 | `PaymentHistoryModel` | `payment_history` | `Module/subscription/Schema/payment.history.schema.ts` |
 
-Currently `app.module.ts` only mounts `/api/v1/auth`. User, prompt, subscription, and template modules have schemas defined but are not yet registered in `app.module.ts`.
+Currently mounted in `app.module.ts`:
+- `/api/v1/auth` — Authentication module
+- `/api/v1/users` — User profile module (requires `profileMiddleware`)
+- `/api/v1/agent` — Agent analysis module (`POST /analyze`)
+
+Prompt, subscription, and template modules have schemas defined but are not yet registered in `app.module.ts`.
 
 ### Planned API Routes
 

@@ -420,23 +420,23 @@ The `AnalysisResult` is consumed by:
 
 After Phase 3 is coded:
 
-- [ ] Tokenizer handles empty string → returns `[]`
-- [ ] Tokenizer handles single word → correct Token
-- [ ] Stop words produce `weight: 0` and `isKeyword: false`
-- [ ] Action verbs produce `weight: 3`
-- [ ] Domain keywords produce `weight: 2`
-- [ ] Keywords are deduped (no repeated words)
-- [ ] Keywords are sorted by weight descending
-- [ ] Classifier returns `general` when no category scores ≥ 3
-- [ ] Classifier correctly identifies all 5 categories
-- [ ] Complexity is `simple` for ≤ 30 words with 1 action
-- [ ] Complexity is `complex` for > 80 words or 3+ actions
-- [ ] Gap scorer detects all 6 elements independently
-- [ ] Strong pattern → `ok`, weak pattern → `weak`, no match → `missing`
-- [ ] Raw score is 10 when all elements are `ok`
-- [ ] Raw score is 0 when all elements are `missing`
-- [ ] All 3 classes are stateless — no instance state between calls
-- [ ] No database imports, no network calls, no side effects
+- [x] Tokenizer handles empty string → returns `[]`
+- [x] Tokenizer handles single word → correct Token
+- [x] Stop words produce `weight: 0` and `isKeyword: false`
+- [x] Action verbs produce `weight: 3`
+- [x] Domain keywords produce `weight: 2`
+- [x] Keywords are deduped (no repeated words)
+- [x] Keywords are sorted by weight descending
+- [x] Classifier returns `general` when no category scores ≥ 3
+- [x] Classifier correctly identifies all 5 categories
+- [x] Complexity is `simple` for ≤ 30 words with 1 action
+- [x] Complexity is `complex` for > 80 words or 3+ actions
+- [x] Gap scorer detects all 6 elements independently
+- [x] Strong pattern → `ok`, weak pattern → `weak`, no match → `missing`
+- [x] Raw score is 10 when all elements are `ok`
+- [x] Raw score is 0 when all elements are `missing`
+- [x] All 3 classes are stateless — no instance state between calls
+- [x] No database imports, no network calls, no side effects
 
 ---
 

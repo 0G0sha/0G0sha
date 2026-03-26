@@ -145,7 +145,7 @@ describe(`POST ${BASE}/register`, () => {
       expect(res.status).toBe(201)
       expect(res.body).toMatchObject({
         code: 201,
-        status: 'OK',
+        status: 'Created',
         success: true,
         error: false,
         message: 'User created successfully',

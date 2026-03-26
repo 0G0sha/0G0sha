@@ -58,3 +58,9 @@ export type AgentOutput = {
      suggestions: string[],
      analysis: AnalysisResult
 }
+
+export interface ElementDetector {
+     element: PromptElement;
+     strongPatterns: RegExp[];
+     weakPatterns: RegExp[];
+}

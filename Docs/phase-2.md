@@ -297,16 +297,16 @@ All references use `Schema.Types.ObjectId` with `ref` for potential `.populate()
 
 After Phase 2 is coded, you should be able to:
 
-- [ ] All 7 collections defined with Mongoose schemas
-- [ ] All 10 indexes created (including text index and TTL)
-- [ ] Agent types defined and importable
-- [ ] `user.comparePassword()` works (hash + compare)
-- [ ] `generateApiKey()` returns `gsh_<hex>` format
-- [ ] `select: false` on password field works (not returned in default queries)
-- [ ] Embedded docs (`tokens`, `subscription`, `limits`, `price`) have `_id: false`
-- [ ] All enum fields have proper validation
-- [ ] timestamps enabled on all collections that need them
-- [ ] TTL index on token_ledger set to 90 days
+- [x] All 7 collections defined with Mongoose schemas
+- [x] All 10 indexes created (including text index and TTL)
+- [x] Agent types defined and importable
+- [x] `user.comparePassword()` works (hash + compare)
+- [x] `generateApiKey()` returns `gsh_<hex>` format
+- [x] `select: false` on password field works (not returned in default queries)
+- [x] Embedded docs (`tokens`, `subscription`, `limits`, `price`) have `_id: false`
+- [x] All enum fields have proper validation
+- [x] timestamps enabled on all collections that need them
+- [x] TTL index on token_ledger set to 90 days
 
 ---
 
