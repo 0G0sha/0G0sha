@@ -21,10 +21,11 @@
 13. [Rate Limiting](#13-rate-limiting)
 14. [Validation (DTO Pattern)](#14-validation-dto-pattern)
 15. [Pagination](#15-pagination)
-16. [The Agent Engine (Core — Planned)](#16-the-agent-engine-core--planned)
-17. [API Reference](#17-api-reference)
-18. [Environment Variables](#18-environment-variables)
-19. [Tech Stack](#19-tech-stack)
+16. [Real-Time (Socket.IO)](#16-real-time-socketio)
+17. [The Agent Engine (Core — In Progress)](#17-the-agent-engine-core--in-progress)
+18. [API Reference](#18-api-reference)
+19. [Environment Variables](#19-environment-variables)
+20. [Tech Stack](#20-tech-stack)
 
 ---
 
@@ -35,7 +36,7 @@ Client Request
      │
      ▼
 ┌─────────────────────────────────────────────────────┐
-│  Express v5 Server (Port 9999)                      │
+│  http.Server (Express v5 + Socket.IO, Port 9999)    │
 │                                                     │
 │  Middleware Pipeline                                │
 │  Helmet → CORS → Body Parser → Rate Limit →         │
@@ -43,9 +44,13 @@ Client Request
 │                                                     │
 │  Router (app.module.ts)                             │
 │  /api/v1/auth     → Authentication Module           │
-│  /api/prompts     → Prompt Engine (planned)         │
+│  /api/v1/users    → User Module                     │
+│  /api/v1/agent    → Agent Analysis Module           │
 │  /api-docs        → Swagger UI                      │
 │  /metrics         → Prometheus Metrics              │
+│                                                     │
+│  Socket.IO Namespaces                               │
+│  /notification    → Notification namespace          │
 │                                                     │
 └─────────────────────────────────────────────────────┘
      │
@@ -109,10 +114,20 @@ src/
 │   ├── worker.emails.ts      # BullMQ worker
 │   └── index.ts              # Worker entrypoint (standalone process)
 │
-├── agent/                    # Pure agent-engine types (no DB dependency)
-│   └── @types/index.d.ts     # TargetModel, PromptCategory, PromptComplexity,
-│                             #   Token, PromptGap, AnalysisResult, TransformRule,
-│                             #   LearnedWeight, SimilarPrompt, AgentInput, AgentOutput
+├── socket.ts                 # Socket.IO setup — socketFunction() + getNotificationNamespace()
+│
+├── agent/                    # Pure agent-engine types + scripts (no DB dependency)
+│   ├── @types/index.d.ts     # TargetModel, PromptCategory, PromptComplexity,
+│   │                         #   Token, PromptGap, AnalysisResult, TransformRule,
+│   │                         #   LearnedWeight, SimilarPrompt, AgentInput, AgentOutput
+│   ├── data/
+│   │   ├── tokenizer.data.ts # STOP_WORDS, ACTION_VERBS, DOMAIN_KEYWORDS sets
+│   │   └── classifier.data.ts# CATEGORY_KEYWORDS, ACTION_KEYWORDS maps
+│   └── script/
+│       ├── tokenizer.ts      # tokenize() → Token[] + extractKeywords()
+│       ├── classifier.ts     # classify() + assessComplexity() + extractIntent()
+│       ├── gap-scorer.ts     # detect() → PromptGap[] + calcRawScore()
+│       └── modelAdapter.ts   # wrapSection(label, content, target) — Claude/GPT/general
 │
 ├── Module/
 │   ├── Authentication/       # Auth module (all endpoints implemented)
@@ -155,10 +170,20 @@ Process Start
      │       unhandledRejection → log + exit(1)
      │       uncaughtException  → log + exit(1)
      │
+     ├── Create http.Server wrapping Express app
+     ├── Attach Socket.IO to http.Server (with CORS allowedOrigins)
+     │
      ├── connect MongoDB (5-retry with backoff)
+     │       → on success: server.listen(PORT)
      ├── connect Redis
      │
-     └── Start Express server on PORT (default: 9999)
+     └── Export server (http.Server) as default + ioSocket
+```
+
+**`src/socket.ts`** — Socket.IO namespace setup:
+```
+socketFunction()
+     └── notificationNamespace = ioSocket.of('/notification')
 ```
 
 **`src/MessageQueue/index.ts`** — runs as a **separate process** via `concurrently`:
@@ -297,6 +322,27 @@ POST /api/v1/auth/register
              └── Set httpOnly cookies → 201 Created
 ```
 
+### Google OAuth Flow (`OauthService`)
+
+`OauthService extends BasedAuthService` — implemented in `Service/0Auth.service.ts`:
+
+```
+POST /api/v1/auth/google  { access_token: <Google OAuth token> }
+     │
+     ├── OauthService.user_data(access_token)
+     │       ├── GET https://www.googleapis.com/oauth2/v3/userinfo
+     │       └── Look up user by email in MongoDB
+     │
+     ├── Existing user → issue access + refresh tokens → set cookies → 201
+     └── New user → OauthService.createNewAccount()
+                       ├── Generate random password (randomBytes 32)
+                       ├── Build username (name + random int)
+                       ├── UserModel.create() with googleId + avatar
+                       └── Issue tokens → set cookies → 201
+```
+
+Cookies use `sameSite: 'none'` (cross-site OAuth redirect compatibility).
+
 ### Auth Endpoints
 
 | Method | Route | Status |
@@ -307,8 +353,7 @@ POST /api/v1/auth/register
 | POST | `/api/v1/auth/logout` | ✓ Complete |
 | POST | `/api/v1/auth/forget-password` | ✓ Complete |
 | POST | `/api/v1/auth/reset-password` | ✓ Complete |
-| POST | `/api/v1/auth/google` | ✓ Complete (Google OAuth token exchange) |
-| GET | `/api/v1/auth/google/callback` | Planned |
+| POST | `/api/v1/auth/google` | ✓ Complete (Google OAuth — token exchange + upsert) |
 
 ---
 
@@ -556,13 +601,39 @@ const result = await paginate(UserModel, { plan: 'pro' }, {
 
 ---
 
-## 16. The Agent Engine (Core — In Progress)
+## 16. Real-Time (Socket.IO)
+
+**`src/socket.ts`** + **`src/app.ts`**
+
+Socket.IO is attached to the same `http.Server` as Express, sharing the port:
+
+```typescript
+// app.ts
+const server = http.createServer(app)
+export let ioSocket = new SocketIOServer(server, { cors: { origin: allowedOrigins } })
+
+// socket.ts
+export const socketFunction = () => {
+  notificationNamespace = ioSocket.of('/notification')
+}
+export const getNotificationNamespace = (): Namespace => notificationNamespace
+```
+
+**Current namespaces:**
+
+| Namespace | Purpose | Status |
+|-----------|---------|--------|
+| `/notification` | Push notifications to connected clients | Scaffolded |
+
+`getNotificationNamespace()` can be imported anywhere in the codebase to emit events into the notification namespace without re-importing `ioSocket` directly.
+
+---
+
+## 17. The Agent Engine (Core — In Progress)
 
 The core value proposition of Gosha. No external AI involved.
 
 ### Type System (`src/agent/@types/index.d.ts`)
-
-All agent-engine types are defined and ready:
 
 ```typescript
 // Input/output contracts
@@ -587,41 +658,84 @@ type LearnedWeight  = { ruleId, category, weight, totalUses, avgScore }
 type SimilarPrompt  = { originalText, optimizedText, score, category, rulesApplied, similarity }
 ```
 
-### Phase 3 Plan (`Docs/phase-3.md`)
+### Phase 1: ANALYZE — Implemented
 
-The Analyzer is the next component to be implemented:
+All three Phase 1 components are built in `src/agent/script/`:
 
+#### Tokenizer (`tokenizer.ts`)
+
+```typescript
+tokenize(text: string): Token[]
+// Lowercases, strips punctuation, splits on whitespace
+// Each token gets isKeyword + weight (stop=0, actionVerb=3, domain=2, default=1)
+
+extractKeywords(tokens: Token[]): string[]
+// Filters isKeyword, sorts by weight desc, deduplicates
 ```
-src/agent/
-├── tokenizer.ts    # Text → Token[] + keyword extraction
-├── classifier.ts   # Token[] → category + complexity + intent
-└── gap-scorer.ts   # Regex pattern matching → PromptGap[] + rawScore
+
+Data sets: `STOP_WORDS`, `ACTION_VERBS`, `DOMAIN_KEYWORDS` (in `agent/data/tokenizer.data.ts`)
+
+#### Classifier (`classifier.ts`)
+
+```typescript
+classify(tokens: Token[]): PromptCategory
+// Scores each category using CATEGORY_KEYWORDS weighted map
+// Returns best category if score ≥ 3, else 'general'
+
+assessComplexity(text: string, keywords: string[]): PromptComplexity
+// simple: ≤30 words, ≤6 keywords, <2 action verbs
+// medium: ≤80 words, ≤12 keywords, <3 action verbs
+// complex: otherwise
+
+extractIntent(keywords: string[]): string
+// Returns "User wants to: <top 5 keywords>"
 ```
 
-See `Docs/phase-3.md` for detailed implementation plan including word sets, regex patterns, scoring formulas, and test cases.
+#### Gap Scorer (`gap-scorer.ts`)
+
+```typescript
+detect(text: string): PromptGap[]
+// Tests 6 elements against strong + weak regex patterns
+// Severity: 'ok' | 'weak' | 'missing'
+
+calcRawScore(gaps: PromptGap[]): number  // 0–10
+// Weighted sum: ok=full, weak=0.5×, missing=0
+// Element weights: task=2.5, context=2, role=1.5, constraints=1.5, outputFormat=1.5, examples=1
+```
+
+### Phase 3: TRANSFORM — Started
+
+#### Model Adapter (`modelAdapter.ts`)
+
+```typescript
+wrapSection(label: string, content: string, target: TargetModel): string
+// claude  → <label>\ncontent\n</label>   (XML tags)
+// gpt     → ## Label\ncontent            (markdown headers)
+// general → [label]\ncontent             (bracket notation)
+```
 
 ### 5-Phase Processing Loop
 
 ```
-Phase 1: ANALYZE
-  ├── Tokenizer — split + normalize input
-  ├── Classifier — category: coding | writing | analysis | marketing | general
-  └── Gap Scorer — score 1–10 (how much improvement the prompt needs)
+Phase 1: ANALYZE          ✓ Implemented
+  ├── tokenize() + extractKeywords()
+  ├── classify() + assessComplexity() + extractIntent()
+  └── detect() + calcRawScore()
 
-Phase 2: LEARN
+Phase 2: LEARN            ○ Planned
   ├── MongoDB similarity search on prompt_history
   └── Load learned_weights for this category from DB
 
-Phase 3: TRANSFORM
+Phase 3: TRANSFORM        ~ In Progress
   ├── 7 rules sorted by learned weight (highest first)
   ├── Rules: add_role, add_context, structure_task, add_constraints,
   │          add_output_format, improve_specificity, add_quality_markers
-  └── Model adapters: Claude (XML tags) | GPT (markdown) | general
+  └── wrapSection() model adapter (Claude XML | GPT markdown | general)
 
-Phase 4: MERGE & SCORE
+Phase 4: MERGE & SCORE    ○ Planned
   └── Borrow structure from high-scoring similar past prompts
 
-Phase 5: RECORD & FEEDBACK
+Phase 5: RECORD & FEEDBACK ○ Planned
   ├── Save optimization to prompt_history
   └── On user rating:
         score ≥ 7 → weight + 0.1
@@ -649,7 +763,7 @@ Storage: learned_weights collection in MongoDB
 
 ---
 
-## 17. API Reference
+## 18. API Reference
 
 ### Current Endpoints
 
@@ -659,9 +773,10 @@ Storage: learned_weights collection in MongoDB
 | POST | `/api/v1/auth/login` | None | Login, set tokens |
 | POST | `/api/v1/auth/refresh` | Cookie | Refresh access token |
 | POST | `/api/v1/auth/logout` | Cookie | Clear token cookies |
-| POST | `/api/v1/auth/google` | None | Google OAuth token exchange |
+| POST | `/api/v1/auth/google` | None | Google OAuth token exchange + upsert |
 | POST | `/api/v1/auth/forget-password` | None | Send password reset token |
 | POST | `/api/v1/auth/reset-password` | None | Reset password with token |
+| POST | `/api/v1/agent/analyze` | Bearer | Analyze + optimize prompt text |
 | GET | `/api-docs` | None | Swagger UI |
 | GET | `/metrics` | None | Prometheus metrics |
 
@@ -685,7 +800,7 @@ Storage: learned_weights collection in MongoDB
 
 ---
 
-## 18. Environment Variables
+## 19. Environment Variables
 
 | Variable | Description |
 |----------|-------------|
@@ -707,7 +822,7 @@ Copy `.env.example` → `.env` and fill in all values before running.
 
 ---
 
-## 19. Tech Stack
+## 20. Tech Stack
 
 | Layer | Technology | Version |
 |-------|-----------|---------|
@@ -721,6 +836,7 @@ Copy `.env.example` → `.env` and fill in all values before running.
 | Logging | Pino | 9.7.0 |
 | Metrics | Prometheus (`prom-client`) | 15.1.3 |
 | Queue | BullMQ | 5.71.0 |
+| Real-Time | Socket.IO | 4.8.3 |
 | File CDN | Cloudinary | 2.6.1 |
 | File Upload | Multer | 2.0.0 |
 | Security | Helmet | 8.1.0 |
@@ -732,4 +848,4 @@ Copy `.env.example` → `.env` and fill in all values before running.
 
 ---
 
-*Last updated: 2026-03-24*
+*Last updated: 2026-03-27*

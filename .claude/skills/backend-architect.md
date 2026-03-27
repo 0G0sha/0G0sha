@@ -26,9 +26,10 @@ You are a senior backend architect embedded in the **Gosha** project — a pure 
 
 ```
 src/
-  app.ts              # Entry — connects DB/Redis, starts server
+  app.ts              # Entry — creates http.Server + SocketIOServer, connects DB/Redis, starts server
   app.config.ts       # Middleware pipeline (Helmet, CORS, rate limit, Prometheus, Morgan, useragent)
   app.module.ts       # Mounts all route modules
+  socket.ts           # socketFunction() + getNotificationNamespace() — Socket.IO namespaces
   gen-import.d.ts     # AUTO-GENERATED barrel — never import across modules directly
 
   config/             # dotenv, mongoDB, redis, cloudinary, index re-exports
@@ -51,8 +52,21 @@ src/
     jobs/job.process.emails.ts
     worker.emails.ts
     index.ts                # Worker entrypoint
+  agent/                    # Pure agent engine — no DB dependency
+    @types/index.d.ts       # AgentInput, AgentOutput, TargetModel, PromptCategory, Token, PromptGap, etc.
+    data/
+      tokenizer.data.ts     # STOP_WORDS, ACTION_VERBS, DOMAIN_KEYWORDS
+      classifier.data.ts    # CATEGORY_KEYWORDS, ACTION_KEYWORDS
+    script/
+      tokenizer.ts          # tokenize() → Token[] + extractKeywords()
+      classifier.ts         # classify() + assessComplexity() + extractIntent()
+      gap-scorer.ts         # detect() → PromptGap[] + calcRawScore()
+      modelAdapter.ts       # wrapSection(label, content, target) — Claude XML | GPT markdown | general
   Module/
-    Authentication/         # Full auth module (see Module Pattern below)
+    Authentication/         # Full auth module including Google OAuth
+      Service/
+        based-auth.service.ts
+        0Auth.service.ts    # OauthService extends BasedAuthService — Google token exchange + upsert
     User/
       Schema/user.schema.ts
       @types/index.d.ts     # IUser interface
@@ -135,11 +149,40 @@ app.use("/api/v1/feature", featureRouter);
 
 ## Core 5-Phase Processing Loop (Prompt Engine)
 
-1. **ANALYZE** — Tokenizer + Classifier (coding/writing/analysis/marketing/general) + Gap Scorer (1–10)
-2. **LEARN** — MongoDB similarity search + weight loader for rule personalization
-3. **TRANSFORM** — 7 rules sorted by learned weight + model adapters (Claude XML, GPT markdown)
-4. **MERGE & SCORE** — Borrow structure from high-scoring similar past prompts
-5. **RECORD & FEEDBACK** — Save history; adjust weights on user rating
+| Phase | Status | Components |
+|-------|--------|-----------|
+| 1. ANALYZE | ✓ Implemented | `tokenize()`, `classify()`, `assessComplexity()`, `extractIntent()`, `detect()`, `calcRawScore()` |
+| 2. LEARN | Planned | MongoDB similarity search + weight loader |
+| 3. TRANSFORM | In Progress | `wrapSection()` model adapter done; 7 rule functions pending |
+| 4. MERGE & SCORE | Planned | Borrow from high-scoring similar past prompts |
+| 5. RECORD & FEEDBACK | Planned | Save history; adjust weights on user rating |
+
+### Phase 1 ANALYZE — Key APIs
+
+```typescript
+// tokenizer.ts
+tokenize(text): Token[]          // weight: stop=0, actionVerb=3, domain=2, default=1
+extractKeywords(tokens): string[] // sorted by weight, deduplicated
+
+// classifier.ts
+classify(tokens): PromptCategory          // threshold: score ≥ 3; else 'general'
+assessComplexity(text, keywords): PromptComplexity  // simple/medium/complex
+extractIntent(keywords): string
+
+// gap-scorer.ts
+detect(text): PromptGap[]        // elements: role, context, task, constraints, outputFormat, examples
+calcRawScore(gaps): number       // 0–10; weights: task=2.5, context=2, others=1–1.5
+```
+
+### Phase 3 TRANSFORM — Model Adapter
+
+```typescript
+// modelAdapter.ts
+wrapSection(label, content, target: TargetModel): string
+// 'claude'  → <label>\ncontent\n</label>
+// 'gpt'     → ## Label\ncontent
+// 'general' → [label]\ncontent
+```
 
 ### 7 Transformation Rules (sorted by weight at runtime)
 
@@ -183,9 +226,31 @@ Tokens are set as **httpOnly cookies** in the register controller.
 - `req.mobileApp` — from `app` header
 - `req.clientIP` — resolved from Cloudflare/proxy headers
 
-## Planned Collections
+## Real-Time (Socket.IO)
+
+Socket.IO shares the same port as Express via `http.Server`:
+
+```typescript
+// app.ts — ioSocket is exported for use elsewhere
+export let ioSocket = new SocketIOServer(server, { cors: { origin: allowedOrigins } })
+
+// socket.ts — call socketFunction() to initialize namespaces
+export const getNotificationNamespace = (): Namespace => notificationNamespace
+```
+
+**Current namespaces:** `/notification` (scaffolded, handler pending)
+
+## Implemented Collections
 
 `prompt_history`, `learned_weights`, `plans`, `templates`, `token_ledger` (90-day TTL), `payment_history`
+
+## Mounted Routes
+
+| Route prefix | Module | Auth |
+|---|---|---|
+| `/api/v1/auth` | Authentication | None / cookie |
+| `/api/v1/users` | User profile | `profileMiddleware` (Bearer) |
+| `/api/v1/agent` | Agent analysis (`POST /analyze`) | Bearer |
 
 ## Planned API Routes
 
