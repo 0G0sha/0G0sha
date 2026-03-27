@@ -22,7 +22,7 @@
   "keywords": [],
   "author": "Mohammed Elrefai <elrefai99@gmail.com>",
   "license": "MIT",
-  "description": "",
+  "description": "Pure AI agent engine that optimizes prompts — learns from user feedback.",
   "dependencies": {
     "axios": "catalog:runtime",
     "bcryptjs": "catalog:runtime",
@@ -75,7 +75,6 @@
     "@typescript-eslint/parser": "catalog:tools",
     "bull-arena": "catalog:tools",
     "bullmq": "catalog:tools",
-    "zod": "catalog:validation",
     "eslint": "catalog:tools",
     "express-useragent": "catalog:runtime",
     "gen-import": "catalog:tools",
@@ -86,12 +85,14 @@
     "prom-client": "catalog:tools",
     "redis": "catalog:tools",
     "request-ip": "catalog:runtime",
+    "socket.io": "catalog:websocket",
     "supertest": "catalog:testing",
     "ts-node": "catalog:tools",
     "tsconfig-paths": "catalog:tools",
     "tsx": "catalog:tools",
     "typescript": "catalog:tools",
     "vite-tsconfig-paths": "catalog:testing",
-    "vitest": "catalog:testing"
+    "vitest": "catalog:testing",
+    "zod": "catalog:validation"
   }
 }

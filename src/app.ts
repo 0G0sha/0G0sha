@@ -25,8 +25,17 @@ process
   })
 import express, { type Express, type Request, type Response } from 'express'
 import client from 'prom-client'
-import { app_module, setupSwagger, app_config, mongoDBConfig, redisConfig } from './gen-import'
+import { app_module, setupSwagger, app_config, mongoDBConfig, redisConfig, allowedOrigins } from './gen-import'
+import * as http from 'http'
+import { Server as SocketIOServer } from 'socket.io'
 const app: Express = express()
+
+const server = http.createServer(app)
+export let ioSocket: SocketIOServer = new SocketIOServer(server, {
+  cors: {
+    origin: allowedOrigins,
+  },
+})
 
 app_config(app)
 setupSwagger(app)
@@ -47,7 +56,7 @@ async function startServer() {
     await Promise.all([
       mongoDBConfig().then(
         () => {
-          app.listen(PORT, () => {
+          server.listen(PORT, () => {
             console.log('🌐 Server is running on:', process.env.API_LINK as string)
           })
         },
@@ -76,4 +85,4 @@ async function startServer() {
 
 startServer()
 
-export default app
+export default server

@@ -79,3 +79,9 @@ catalogs:
 
   validation:
     "zod": "^3.25.67"
+
+  # Websockets
+  websocket:
+    "socket.io": "^4.8.3"
+    "@socket.io/redis-adapter": "^8.3.0"
+    "@socket.io/redis-emitter": "^5.1.0"
