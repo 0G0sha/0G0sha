@@ -37,6 +37,7 @@ export type { TargetModel, PromptCategory, PromptComplexity, PromptElement, Toke
 export { classify, assessComplexity, extractIntent } from './agent/script/classifier';
 export { detect, calcRawScore } from './agent/script/gap-scorer';
 export { wrapSection } from './agent/script/modelAdapter';
+export { addRules } from './agent/script/rule-engine';
 export { tokenize, extractKeywords } from './agent/script/tokenizer';
 export { allowedOrigins } from './app.config';
 export { default as app_config } from './app.config';
