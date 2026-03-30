@@ -26,8 +26,8 @@ export type TransformRule = {
      id: string,
      name: string,
      element: PromptElement,
-     condition: (text: string) => boolean,
-     apply: (text: string) => string
+     condition: (analysis: AnalysisResult) => boolean,
+     apply: (text: string, analysis: AnalysisResult, target: TargetModel) => string
 }
 export type LearnedWeight = {
      ruleId: string,
