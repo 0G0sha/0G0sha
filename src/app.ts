@@ -25,9 +25,11 @@ process
   })
 import express, { type Express, type Request, type Response } from 'express'
 import client from 'prom-client'
-import { app_module, setupSwagger, app_config, mongoDBConfig, redisConfig, allowedOrigins } from './gen-import'
 import * as http from 'http'
 import { Server as SocketIOServer } from 'socket.io'
+import { allowedOrigins, app_config, mongoDBConfig, redisConfig } from './gen-import'
+import { setupSwagger } from './swagger'
+import appModule from './app.module'
 const app: Express = express()
 
 const server = http.createServer(app)
@@ -39,7 +41,7 @@ export let ioSocket: SocketIOServer = new SocketIOServer(server, {
 
 app_config(app)
 setupSwagger(app)
-app_module(app)
+appModule(app)
 
 app.get('/metrics', async (_req: Request, res: Response) => {
   res.set('Content-Type', client.register.contentType)
