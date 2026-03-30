@@ -7,7 +7,7 @@ import { validateDTO } from '../../middleware/validateDTO'
 const router: Router = Router()
 
 router.get('/profile', profileMiddleware, profileController)
-router.put('/profile', profileMiddleware, upload.single('avatar'), validateDTO(EditProfileDTO), editProfileController)
-router.delete('/profile', profileMiddleware, deleteAccountController)
+router.put('/profile/:id', profileMiddleware, upload.single('avatar'), validateDTO(EditProfileDTO), editProfileController)
+router.delete('/profile/:id', profileMiddleware, deleteAccountController)
 
 export default router
