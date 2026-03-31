@@ -6,7 +6,7 @@ import type { PublishNotificationDTO } from '../DTO/index.dto'
 
 export const publishController: RequestHandler = asyncHandler(
      async (req: Request, res: Response) => {
-          const userId = req.user!._id.toString()
+          const userId = req.user?._id as string
           const { type, title, message } = req.body as PublishNotificationDTO
 
           const payload = {

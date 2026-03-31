@@ -4,7 +4,7 @@ import { registerClient } from '../Service/register.service'
 
 export const streamController: RequestHandler = asyncHandler(
      async (req: Request, res: Response) => {
-          const userId = req.user!._id.toString()
+          const userId = req.user?._id as string
           const lastEventId = req.headers['last-event-id'] as string | undefined
 
           // SSE headers
