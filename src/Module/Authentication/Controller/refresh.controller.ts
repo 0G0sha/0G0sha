@@ -14,7 +14,7 @@ export const refreshController: RequestHandler = asyncHandler(
                next(AppError.badRequest("Refresh token not found"))
                return
           }
-          const publicKey = createPublicKey(process.env.PUBLIC_REFRESH_TOKEN_SECRET as string)
+          const publicKey = createPublicKey(process.env.REFRESH_PUBLIC_KEY as string)
           await V4.verify(token, publicKey).then(async (payload: any) => {
                const user = await UserModel.findOne({ _id: payload.data.user_id }, { _id: 1 })
                if (!user) {

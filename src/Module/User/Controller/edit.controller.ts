@@ -8,6 +8,10 @@ export const editProfileController: RequestHandler = asyncHandler(
      async (req: Request, res: Response, next: NextFunction) => {
           const data = req.body as EditProfileDTO
           const userId = req.user!._id as string
+          if (userId !== req.params.id) {
+               next(AppError.badRequest("U don't have any Primitions"))
+               return
+          }
 
           if (req.file) {
                const result = await uploadToCloudinary(req.file.buffer, {

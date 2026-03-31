@@ -13,7 +13,7 @@ export const profileMiddleware: RequestHandler = asyncHandler(
                res.status(401).json({ code: 401, status: "Unauthorized", timestamp: new Date(), success: false, error: true, message: "Please login first" });
                return
           }
-          const publicKey = createPublicKey(process.env.PUBLIC_ACCESS_TOKEN_SECRET as string)
+          const publicKey = createPublicKey(process.env.ACCESS_PUBLICE_KEY as string)
           await V4.verify(token, publicKey).then(async (payload: any) => {
 
                const user = await UserModel.findOne({ _id: payload.data.user_id }, { password: 0 })

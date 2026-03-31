@@ -10,6 +10,11 @@ export { OauthService } from './Module/Authentication/Service/0Auth.service';
 export { BasedAuthService } from './Module/Authentication/Service/based-auth.service';
 export { registerController, refreshController, logoutController, loginController, googleController, forgetPasswordController, resetPasswordController } from './Module/Authentication/auth.controller';
 export { token_PASETO } from './Module/Authentication/utils/paseto.utils';
+export { PublishNotificationDTO } from './Module/Notifications/DTO/index.dto';
+export { publishNotification } from './Module/Notifications/Service/public.service';
+export { registerClient, getActiveClients } from './Module/Notifications/Service/register.service';
+export { formatSSEEvent, formatHeartbeat } from './Module/Notifications/Utils/sseFormat';
+export { streamController, publishController } from './Module/Notifications/notification.controller';
 export { EditProfileDTO } from './Module/User/DTO/index.dto';
 export { UserModel } from './Module/User/Schema/user.schema';
 export { BasedUserService } from './Module/User/Service/based-user.service';
@@ -37,6 +42,7 @@ export type { TargetModel, PromptCategory, PromptComplexity, PromptElement, Toke
 export { classify, assessComplexity, extractIntent } from './agent/script/classifier';
 export { detect, calcRawScore } from './agent/script/gap-scorer';
 export { wrapSection } from './agent/script/modelAdapter';
+export { addRules } from './agent/script/rule-engine';
 export { tokenize, extractKeywords } from './agent/script/tokenizer';
 export { allowedOrigins } from './app.config';
 export { default as app_config } from './app.config';
@@ -44,5 +50,5 @@ export { default as cloudinary } from './config/cloudinary';
 export { default as dotenv } from './config/dotenv';
 export { mongoDBConfig, redisConfig } from './config';
 export { default as redis } from './config/redis';
-export { socketFunction, getNotificationNamespace } from './socket';
-export * as app_module from './app.module'
+export { default as notification_module } from './Module/Notifications/notification.module';
+export { default as app_module } from './app.module';

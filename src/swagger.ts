@@ -269,5 +269,5 @@ const swaggerUiOptions = {
 
 export function setupSwagger(app: Express): void {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions))
-  console.log('📄 Swagger docs endpoints available at:', process.env.NODE_ENV === 'development' ? `${String(process.env.SITE_API_Local_URL)}/api-docs` : `${String(process.env.SITE_API_URL)}/api-docs`)
+  console.log('📄 Swagger docs endpoints available at:', `${String(process.env.API_LINK)}/api-docs`)
 }

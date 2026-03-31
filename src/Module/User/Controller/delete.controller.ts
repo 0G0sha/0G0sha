@@ -6,7 +6,10 @@ import { BasedUserService } from '../Service/based-user.service'
 export const deleteAccountController: RequestHandler = asyncHandler(
      async (req: Request, res: Response, next: NextFunction) => {
           const userId = req.user!._id as string
-
+          if (userId !== req.params.id) {
+               next(AppError.badRequest("U don't have any Primitions"))
+               return
+          }
           const userService = new BasedUserService()
           const result = await userService.delete_account(userId)
 
