@@ -1,6 +1,5 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express'
 import type { ZodSchema } from 'zod'
-import { AppError } from '../Shared/errors/app-error'
 import { asyncHandler } from '../utils/api-requesthandler'
 
 export function validateDTO<T>(schema: ZodSchema<T>): RequestHandler {

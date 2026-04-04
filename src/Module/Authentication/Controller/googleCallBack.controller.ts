@@ -1,8 +1,5 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import { asyncHandler } from "../../../utils/api-requesthandler";
-import { AppError } from "../../../Shared/errors/app-error";
-import { token_PASETO } from "../utils/paseto.utils";
-import { OauthService } from "../auth.service";
 
 
 export const googleController: RequestHandler = asyncHandler(

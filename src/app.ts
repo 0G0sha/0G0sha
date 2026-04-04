@@ -1,4 +1,5 @@
 import './config/dotenv'
+import './gen-import'
 import { logger } from './utils/logger'
 process
   .on('unhandledRejection', (reason, promise) => {
@@ -27,7 +28,6 @@ import express, { type Express, type Request, type Response } from 'express'
 import client from 'prom-client'
 import * as http from 'http'
 import { Server as SocketIOServer } from 'socket.io'
-import { allowedOrigins, setupSwagger, app_config, mongoDBConfig, redisConfig, app_module } from '@/gen-app-config'
 
 const app: Express = express()
 
@@ -61,7 +61,7 @@ async function startServer() {
             console.log('🌐 Server is running on:', process.env.API_LINK as string)
           })
         },
-      ).catch((err) => {
+      ).catch((err: any) => {
         logger.error({
           message: 'MongoDB connection failed',
           error: err.message,
@@ -69,7 +69,7 @@ async function startServer() {
         })
         process.exit(1)
       }),
-      redisConfig().catch((err) => {
+      redisConfig().catch((err: any) => {
         logger.error({
           message: 'Redis connection failed',
           error: err.message,
