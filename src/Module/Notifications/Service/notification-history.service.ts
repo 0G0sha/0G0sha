@@ -1,6 +1,6 @@
 import { Types } from 'mongoose'
 import { createLogger } from '../../../utils/logger'
-import { NotificationModel } from '../Schema/notification.schema'
+import { NotificationModel } from '../../../gen-app-config'
 import { AppError } from '../../../Shared/errors/app-error'
 
 const logger = createLogger('NotificationHistoryService')

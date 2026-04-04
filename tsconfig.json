@@ -10,6 +10,11 @@
     "types": [
       "node",
       "express"
-    ]
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@src/*": ["src/*"]
+    }
   }
 }
