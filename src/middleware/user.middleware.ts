@@ -1,5 +1,4 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
-import { AppError, UserModel } from "../gen-import";
 import { createPublicKey } from "node:crypto";
 import { V4 } from "paseto"
 import { asyncHandler } from "../utils/api-requesthandler";
