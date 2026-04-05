@@ -52,6 +52,16 @@ Environment: copy `.env.example` to `.env` and fill in values before running.
 4. **MERGE & SCORE** — Borrow structure from high-scoring similar past prompts
 5. **RECORD & FEEDBACK** — Save to history; adjust rule weights on user rating
 
+### Agent Engine Implementation Status
+
+**Currently wired (Phase 1 only):** `AgentService.analyze()` in `Module/agent/Service/based-agent.service.ts` runs tokenize → classify → assessComplexity → extractIntent → detect → calcRawScore and returns an `AnalysisResult`. Phases 2–5 engine components exist in `src/agent/script/` but are **not yet called by the service**.
+
+Engine scripts available but not yet integrated:
+- `rule-engine.ts` — `RuleEngine` class: sorts 7 rules by learned weight, applies matching ones
+- `merger.ts` — `Merger` class: borrows XML/markdown/bracket sections from high-scoring past prompts that are absent in the current output
+- `gap-scorer.ts` — `detect()` + `calcRawScore()`: scores 6 elements (task=2.5, context=2.0, role/constraints/outputFormat=1.5, examples=1.0) on a 1–10 scale
+- `learner.ts` — `Learner` class: 3 paths — READ (`findSimilar` MongoDB text search, `getWeights`), WRITE (`recordResult` saves to `prompt_history` + increments rule usage), FEEDBACK (`applyFeedback` boosts/penalizes rule weights). Also `initWeights` for seeding (idempotent, called on startup)
+
 ### 7 Built-in Transformation Rules
 
 `add_role`, `add_context`, `structure_task`, `add_constraints`, `add_output_format`, `improve_specificity`, `add_quality_markers`
@@ -140,7 +150,11 @@ When adding engine logic, put it in `src/agent/`; only the request/response boun
 
 Tokens are delivered as `httpOnly`, `secure`, `sameSite: 'strict'` cookies. `access_token` maxAge = 7_200_000 ms, `refresh_token` maxAge = 2_592_000_000 ms.
 
-**Verification:** `profileMiddleware` (`Module/User/middleware/profile.middleware.ts`) reads the access token from the `Authorization: Bearer <token>` header (not cookies). It uses `PUBLIC_ACCESS_TOKEN_SECRET` (not the private key) for verification.
+**Verification:** Two auth middlewares exist — use the right one:
+- `profileMiddleware` (`Module/User/middleware/profile.middleware.ts`) — fetches the full user document (excluding password). Use on routes that need full profile data.
+- `userMiddleware` (`src/middleware/user.middleware.ts`) — fetches only `{ _id: 1 }`. Use on routes that only need to confirm identity.
+
+Both read `Authorization: Bearer <token>` and verify against `ACCESS_PUBLICE_KEY` (note: env var has a typo — `PUBLICE` not `PUBLIC`).
 
 ### Password Hashing
 
